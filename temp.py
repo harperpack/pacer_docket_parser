@@ -15,3 +15,6 @@ Created on Fri Jan 17 15:48:43 2020
 
 from bs4 import BeautifulSoup
 
+/// yes
+- clarify the date/num string
+- 

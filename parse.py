@@ -100,7 +100,6 @@ class DocketParser:
                               "trustee":{},
                               "creditor":{},
                               }
-#        self.case_id = str(os.path).split(os.path.basename(docket))[0]
         self.case_id = docket[docket.rfind(str(os.path.sep))+1:].partition('.html')[0]
         self.miss_list = []
         self.roles = ['Defendant','Plaintiff','Petitioner','Respondent','Appellee','Appellant','Trustee','Creditor']
@@ -120,11 +119,9 @@ class DocketParser:
             docket_title = ' '.join([header_element.get_text() for header_element in self.soup.find_all(header)])
             if docket_title:
                 break
-#        self.parsed_docket["docket_title"] = {"blob":docket_title}
         self.parsed_docket["docket_title"] += docket_title
     
     def parse_header(self, text, pertains_to_entire_docket=False, key=None):
-#        header_dict = {"blob":text}
         ## DO MORE?
         if not pertains_to_entire_docket:
             self.parsed_docket["docket_header"] += text
@@ -136,10 +133,9 @@ class DocketParser:
             
     def parse_docket_footers(self, table):
         table_text = table.get_text()
-        if "agistrate" not in table_text and ' ' not in table_text: #table_text.isupper() or
+        if "agistrate" not in table_text and ' ' not in table_text: 
             self.parsed_docket["docket_flags"] += table_text
         elif "Docket Text" in table_text:
-#            self.parsed_docket["docket_text"] = {"blob":table_text,"rows":[]}
             self.parsed_docket["docket_text"] = {"rows":[]}
             first = True
             for row in table.find_all('tr'):
@@ -182,26 +178,6 @@ class DocketParser:
                 self.parsed_docket[role][key][subkey][sub2key] = sub_blob
             else:
                 self.parsed_docket[role][key][subkey] = sub_blob
-    
-#    def parse_reps(self, role, key, rep_blob, rep_key=0):
-#        estimated_reps = rep_blob.find_all('b')
-#        if estimated_reps:
-#            name_attempt = ' '.join(estimated_reps[0].get_text().split())
-#            if len(estimated_reps) == 1:
-#                if estimated_reps[0].get_text():
-#                    self.parsed_docket[role][key]["reps"][rep_key] = {"name_attempt":name_attempt}
-#                    self.parsed_docket[role][key]["reps"][rep_key]["blob"] = rep_blob.get_text()
-#                    self.parse_sub_role(rep_blob, ['i','em'], role, key, "reps", rep_key, "italics")
-#                    self.parse_sub_role(rep_blob, ['b','strong'], role, key, "reps", rep_key, "name_attempt")
-#            else:
-#                self.parsed_docket[role][key]["reps"][rep_key] = {"name_attempt":name_attempt}
-#                current_blob, next_rep, remaining_blob = str(rep_blob).partition(str(estimated_reps[1]))
-#                current_rep_blob = BeautifulSoup(current_blob, 'html.parser')
-#                self.parsed_docket[role][key]["reps"][rep_key]["blob"] = current_rep_blob.get_text()
-#                self.parse_sub_role(current_rep_blob, ['i','em'], role, key, "reps", rep_key, "italics")
-#                self.parse_sub_role(current_rep_blob, ['b','strong'], role, key, "reps", rep_key, "name_attempt")
-#                leftover_rep_blob = BeautifulSoup(next_rep + remaining_blob, 'html.parser')
-#                self.parse_reps(role, key, leftover_rep_blob, rep_key+1)
     
     def parse_reps(self, role, key, rep_blob, rep_key=0):
         estimated_reps = rep_blob.find_all('b')
@@ -292,14 +268,7 @@ class DocketParser:
         self.open_docket()
         self.parse_docket_header()
         self.parse_docket()
-    
-    
-#path = '/Users/harper/Documents/nu_work/noacri/data/1-06-cr-00887.html'
-#path = '/Users/harper/Documents/petitioner.html'
-#path = '/Users/harper/Documents/nu_work/nsf/noacri/code/test_dockets'
-#path = '/Users/harper/Documents/nu_work/nsf/noacri/code/test_dockets/4-16-cv-00376-WEJ.html'
 
-#CorpusParser(path)
 
 if __name__ == "__main__":
     CorpusParser(sys.argv[1])
