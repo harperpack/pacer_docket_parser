@@ -174,8 +174,15 @@ class DocketParser:
             for tag in tags_sought:
                 for subtag in tag:
                     tag_text.append(subtag.get_text().strip())
-            sub_blob = ' '.join(tag_text)
-            sub_blob = ' '.join(sub_blob.strip().split())
+            print(tag_text)
+            for count, text in enumerate(tag_text):
+                tag_text[count] = ' '.join(text.strip().split())
+            if any(element == "name_attempt" for element in [role, key, subkey, sub2key, sub3key]):
+                sub_blob = tag_text[0] if tag_text else ''
+            else:
+                sub_blob = tag_text
+#            sub_blob = ' '.join(tag_text)
+#            sub_blob = ' '.join(sub_blob.strip().split())
             if sub3key:
                 self.parsed_docket[role][key][subkey][sub2key][sub3key] = sub_blob
             elif sub2key:
@@ -265,15 +272,51 @@ class DocketParser:
         if len(roles) == 1:
             self.parse_role(table, split, roles[0].lower())
         else:
-            for role in roles:
-                underlines = table.find_all('u')
-                if len(underlines) == 1:
-                    self.parse_role(table, underlines[0], role.lower())
-                    break
-                current_role_portion, next_role, next_role_portion = str(table).partition(str(underlines[1]))
-                role_blob = BeautifulSoup(current_role_portion, 'html.parser')
-                self.parse_role(role_blob, underlines[0], role.lower())
-                table = BeautifulSoup(next_role + next_role_portion, 'html.parser')
+            #print(roles)
+            underlines = table.find_all('u')
+            length = len(underlines) - 1
+            for count, underline in enumerate(underlines):
+                if underline.get_text().strip() in roles:
+                    if not table.get_text():
+                        if str(table):
+                            self.log_miss(table)
+                        break
+                    if count == length:
+                        self.parse_role(table, underline, underline.get_text().strip().lower())
+                    else:
+#                        print("-----u and u+1-----")
+#                        print(underlines[count])
+#                        print(underlines[count+1])
+                        pre_role, current_underline, leftover = str(table).partition(str(underlines[count]))
+                        role_section, next_underline, remainder = leftover.partition(str(underlines[count + 1]))
+                        role_section = pre_role + current_underline + role_section
+#                        role_section, next_underline, remainder = str(table).partition(str(underlines[count + 1]))
+                        role_blob = BeautifulSoup(role_section, 'html.parser')
+#                        print('-----Start Role-----')
+#                        print(' '.join(role_blob.get_text().strip().split()))
+                        self.parse_role(role_blob, underline, underline.get_text().strip().lower())
+                        table = BeautifulSoup(next_underline + remainder, 'html.parser')
+#                        print('-----Next Role-----')
+#                        print(' '.join(table.get_text().strip().split()))
+                    
+#                role = [x for x in roles if x == underline.get_text().strip()]
+#                if role:
+#                    
+#                    
+#            for role in roles:
+#                underlines = table.find_all('u')
+#                #print(underlines)
+#                if len(underlines) == 1:
+#                    self.parse_role(table, underlines[0], role.lower())
+#                    break
+#                current_role_portion, next_role, next_role_portion = str(table).partition(str(underlines[1]))
+#                role_blob = BeautifulSoup(current_role_portion, 'html.parser')
+#                print('-----Start Role-----')
+#                print(' '.join(role_blob.get_text().strip().split()))
+#                self.parse_role(role_blob, underlines[0], role.lower())
+#                table = BeautifulSoup(next_role + next_role_portion, 'html.parser')
+#                print('-----Next Role-----')
+#                print(' '.join(table.get_text().strip().split()))
             
     def parse_docket(self):
         for table in self.soup.find_all('table'):
@@ -298,8 +341,9 @@ class DocketParser:
 #path = '/Users/harper/Documents/petitioner.html'
 #path = '/Users/harper/Documents/nu_work/nsf/noacri/code/test_dockets'
 #path = '/Users/harper/Documents/nu_work/nsf/noacri/code/test_dockets/4-16-cv-00376-WEJ.html'
+path = '/Users/harper/Documents/nu_work/nsf/noacri/code/test_dockets/1-16-cv-00863-TWT.html'
 
-#CorpusParser(path)
+CorpusParser(path)
 
-if __name__ == "__main__":
-    CorpusParser(sys.argv[1])
+#if __name__ == "__main__":
+#    CorpusParser(sys.argv[1])
