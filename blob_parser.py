@@ -317,6 +317,9 @@ class DocketParser:
 #                table = BeautifulSoup(next_role + next_role_portion, 'html.parser')
 #                print('-----Next Role-----')
 #                print(' '.join(table.get_text().strip().split()))
+    
+    def refine_header_parsing(self):
+        
             
     def parse_docket(self):
         for table in self.soup.find_all('table'):
