@@ -18,9 +18,9 @@ import random
 
 class CorpusParser:
     
-    def __init__(self, docket_dir, o_dir=None, threads=8):
+    def __init__(self, docket_dir, o_dir="./parsed_dockets/", threads=8):
         self.docket_directory = docket_dir
-        self.output_directory = o_dir if o_dir else "./parsed_dockets/"
+        self.output_directory = o_dir
         self.process_count = threads
         self.docket_queue = []
         self.parsed_dockets = {}
@@ -41,9 +41,10 @@ class CorpusParser:
     
     def parse_docket(self, docket):
         new_parse = DocketParser(docket)
-        case_id = new_parse.case_id + "_0" + str(random.randint(1,99999))
-        parsed_docket = {case_id: new_parse.parsed_docket}
-        return parsed_docket
+        if "FAILURE" not in new_parse.parsed_docket:
+            case_id = new_parse.case_id + "_0" + str(random.randint(1,99999))
+            parsed_docket = {case_id: new_parse.parsed_docket}
+            return parsed_docket
     
     def output_to_local_dir(self):
         Path(self.output_directory).mkdir(parents=True, exist_ok=True)
@@ -53,24 +54,27 @@ class CorpusParser:
             json.dump(self.parsed_dockets, f, ensure_ascii=False, indent=4)
     
     def main(self):
-        start_queue = time.time()
-        self.build_docket_queue()
-        if not self.docket_queue:
-            print("Could not find .html files to parse. :(")
-        else:
-            queue_time = round(time.time() - start_queue,2)
-            print("Successfully queued {c} dockets in {t} seconds.".format(c=self.docket_count,t=queue_time))
-            p = Pool(processes=self.process_count)
-            start_parse = time.time()
-            results_list = p.map(self.parse_docket, self.docket_queue)
-            self.parse_count = len(results_list)
-            for result_dict in results_list:
-                self.parsed_dockets.update(result_dict)
-            parse_time = round(time.time() - start_parse,2)
-            print("Successfully parsed {c} dockets in {t} seconds.".format(c=self.parse_count,t=parse_time))
-            self.output_to_local_dir()
-            print("Saved to {p}".format(p=os.getcwd()+self.filename.replace("./","/")))
-            print("\nAnd when the parser saw the breadth of its outputs, it wept for there were no more files to parse.")
+        try:
+            start_queue = time.time()
+            self.build_docket_queue()
+            if not self.docket_queue:
+                print("Could not find .html files to parse. :(")
+            else:
+                queue_time = round(time.time() - start_queue,2)
+                print("Successfully queued {c} dockets in {t} seconds.".format(c=self.docket_count,t=queue_time))
+                p = Pool(processes=self.process_count)
+                start_parse = time.time()
+                results_list = p.map(self.parse_docket, self.docket_queue)
+                self.parse_count = len(results_list)
+                for result_dict in results_list:
+                    self.parsed_dockets.update(result_dict)
+                parse_time = round(time.time() - start_parse,2)
+                print("Successfully parsed {c} dockets in {t} seconds.".format(c=self.parse_count,t=parse_time))
+                self.output_to_local_dir()
+                print("Saved to {p}".format(p=os.getcwd()+self.filename.replace("./","/")))
+                print("\nAnd when the parser saw the breadth of its outputs, it wept for there were no more files to parse.")
+        except Exception as e:
+            print('Now is the winter of our discontent: parsing failed with exception "{f}"'.format(f=e))
                 
     
 class DocketParser:
@@ -79,6 +83,7 @@ class DocketParser:
         self.docket = docket
         self.parsed_docket = {"docket_flags":'',
                               "case_id":'',
+                              "docket_case_id":'',
                               "addl_docket_fields":[],
                               "docket_text":[],
                               "docket_title":'',
@@ -210,7 +215,6 @@ class DocketParser:
                             else:
                                 one_h_val.append(td.get_text())
                 else:
-                    print("~~~~~MORE THAN 3 TDs~~~~~")
                     if underline:
                         if one_h:
                             self.update_addl_field_list(one_h_lines, one_h, one_h_val, '', role, key)
@@ -235,7 +239,6 @@ class DocketParser:
             self.update_addl_field_list(one_h_lines, one_h, one_h_val, '', role, key)
         if two_h:
             self.update_addl_field_list(two_h_lines, two_h, two_h_val, '', role, key)
-#        self.update_addl_field_list(line[], name, value[], key=role, rolekey=key)
     
     def parse_docket_header(self):
         for header in ['h1', 'h2', 'h3', 'h4', 'h5', 'h6']:
@@ -281,30 +284,13 @@ class DocketParser:
             self.parsed_docket["docket_flags"] += table_text.replace("\n","")
         elif "Docket Text" in table_text:
             self.parse_docket_text(table, table_text)
-#            self.parsed_docket["docket_text"] = {"rows":[]}
-#            first = True
-#            for row in table.find_all('tr'):
-#                full_row = {"date":'',"number":'',"links":'',"text":''}
-#                for column in row.find_all('td'):
-#                    if first:
-#                        full_row["text"] = row.get_text()
-#                        first = False
-#                        break
-#                    else:
-#                        if "/" in column.get_text() and column.get_text().replace("/","").isnumeric():
-#                            full_row["date"] = column.get_text()
-#                        elif len(column.get_text()) < 6:
-#                            full_row["number"] = column.get_text().strip()
-#                        else:
-#                            full_row["text"] = column.get_text()
-#                full_row["links"] = [str(a['href']) for a in row.find_all('a') if a.has_attr('href')]
-#                self.parsed_docket["docket_text"]["rows"].append(full_row)
         elif "PACER" in table_text:
             self.parsed_docket["pacer_receipt"] += table_text
         elif "Date Filed" in table_text:
             self.parse_header(table_text)
         else:
-            self.parsed_docket["missed_parses"].append(table.get_text())
+            self.parse_header(table_text)
+#            self.parsed_docket["missed_parses"].append(table.get_text())
     
     def parse_sub_role(self, blob, tags, role, key, subkey, sub2key=None, sub3key=None):
         if blob.get_text():
@@ -367,7 +353,6 @@ class DocketParser:
             end_reps = soup.find('u')
             if end_reps:
                 rep_section, next_underline, charges_section = post_role.partition("represented")[2].partition(end_reps.get_text())
-#                charges_blob = BeautifulSoup(next_underline + charges_section, 'html.parser')
                 charges_blob = next_underline + charges_section
             else:
                 rep_section = post_role.partition("represented")[2]
@@ -427,13 +412,12 @@ class DocketParser:
         searchable_soup = BeautifulSoup(searchable_area, 'html.parser')
         for underline in searchable_soup.find_all('u'):
             underline = self.clean_underline(underline)
-#            underline = ' '.join(underline.get_text().strip().split())
             if underline in self.other_known_underlines:
                 continue
             elif underline in self.roles:
                 continue
             else:
-                print("#######======> NEW ROLE: {r}|{c}".format(r=underline, c=self.case_id))
+                print('Hey! Listen! File {c} contains a role not yet seen: "{r}"'.format(c=self.case_id, r=underline,))
                 self.roles.append(underline)
                 self.parsed_docket[underline.lower()] = {}
 
@@ -451,7 +435,6 @@ class DocketParser:
                 roles = [role for role in self.roles if role in table_text]
                 if not roles:
                     self.parse_docket_footers(table)
-#                    self.parsed_docket["missed_parses"].append(table.get_text())
                 else:
                     if "Docket Text" in table_text:
                         self.parse_docket_text(table, table_text)
@@ -460,7 +443,13 @@ class DocketParser:
     
     def update_addl_field_list(self, line, name, value, loc="Header", key="addl_docket_fields", rolekey=None):
         if key == "addl_docket_fields":
-            self.parsed_docket[key].append({#"line":line,
+            check = {#"line":line,
+                                            "field_name_attempt":name,
+                                            "field_value_attempt":value,
+                                            "found_in_section":loc}
+            if check not in self.parsed_docket[key]:
+                #print(check["field_name_attempt"])
+                self.parsed_docket[key].append({#"line":line,
                                             "field_name_attempt":name,
                                             "field_value_attempt":value,
                                             "found_in_section":loc})
@@ -471,7 +460,6 @@ class DocketParser:
                                             "field_name_attempt":field_name,
                                             "field_value_attempt":field_value})
         else:
-            print("WRONG ADDL FIELD ENTRY")
             self.parsed_docket["missed_parses"].append(line)
     
     def refine_header_parsing(self):
@@ -491,7 +479,6 @@ class DocketParser:
                 self.update_addl_field_list(line, "court_city", city.replace(")",''))
                 self.update_addl_field_list(line, "court_state", court_state.strip())
             elif 'USDC' in line:
-#                print(line.lower())
                 if "other" in line.lower() and "court" in line.lower() and "case" in line.lower() and "number" in line.lower():
                     field_name, colon, field_value = line.partition(":")
                     field_name = '_'.join(field_name.strip().lower().split())
@@ -517,7 +504,17 @@ class DocketParser:
             elif " circuit" in line.lower():
                 self.update_addl_field_list(line, "circuit", line.strip())
             elif self.case_id.replace("_",'').replace("-",'').replace(":",'') in line.replace("_",'').replace("-",'').replace(":",''):
-                case_type = line.partition(":")[0]
+                case_type, colon, docket_case_id = line.partition(":")
+                self.parsed_docket["docket_case_id"] = docket_case_id.strip().split()[0]
+                if "civil" in case_type.lower():
+                    self.update_addl_field_list(line, "case_type", "Civil")
+                elif "criminal" in case_type.lower():
+                    self.update_addl_field_list(line, "case_type", "Criminal")
+                else:
+                    self.update_addl_field_list(line, "case_type", case_type)
+            elif "docket" in line.lower() and "case" in line.lower() and "#" in line:
+                case_type, colon, docket_case_id = line.partition(":")
+                self.parsed_docket["docket_case_id"] = docket_case_id.strip().split()[0]
                 if "civil" in case_type.lower():
                     self.update_addl_field_list(line, "case_type", "Civil")
                 elif "criminal" in case_type.lower():
@@ -556,9 +553,19 @@ class DocketParser:
             number = number.replace(element, ' ')
         return merge.join(number.strip().split())
     
+    def overload_fields(self, existing, new):
+        if not existing:
+            return new
+        elif isinstance(existing, list):
+            return existing + [new]
+        else:
+            return [existing, new]
+    
     def parse_contact_blob(self, role, key, num, non_reps=False, formatted=None):
         other_fields = []
+        unsure = 0
         fields = {'org':'',
+                  'purview':'',
                   'building':'',
                   'postal_address':['',''],
                   'city':'',
@@ -582,14 +589,15 @@ class DocketParser:
                      'GROUP','Associates','ASSOCIATES','&','Team','TEAM','Squad',
                      'SQUAD','UNIT','Unit','L.P.','L.L.C.','GMBH','Gmbh','LLc',
                      'Llc','Company','Corporation','Co.','co.','L.p.','L.l.c',
-                     'l.l.c','Firm']
+                     'l.l.c','Firm','Ltd','LTD', 'Dept','Department','LLp','Llp',
+                     'LTd','ltd',' llp']
         postal_words = ['P.O.','PO ','Box','BOX','St.','Street','Blvd','Hwy','Jnc',
                         'Boulevard','Dr.','Drive','Ave','Highway','Junction',
                         'Rd','Road','Circle','Place','Ridge','Terrace','Sq.',
                         'Square','Lane','Ln','Crescent','Alley','Bvd','Court',
                         'Expressway','Freeway','Jct','Parkway', 'North', 'South',
-                        'East', 'West', 'NW', 'SW','Pier']
-        second_address = ['Suite','Ste','Floor','Room',]
+                        'East', 'West', 'Nw', 'Sw','Pier',]
+        second_address = ['Suite','Ste.','Floor','Room',]
         building_words = ['Tower','Center','Building','Courthouse','Complex',
                           'Prison','Jail','Penitentiary','Facility','USP','College',
                           'University','Institute','Institution','Supermax']
@@ -613,11 +621,10 @@ class DocketParser:
             lines = [non_reps]
             italics = formatted
         for line in lines:
-            #print(line)
             tokens = line.split()
             if not line:
                 continue
-            elif line == '.' or line.lower() == "v.":
+            elif line.strip() == '.' or line.lower() == "v.":
                 continue
             elif line.strip() == '' or line.strip == ' ':
                 continue
@@ -627,77 +634,92 @@ class DocketParser:
                 continue
             elif "@" in line and "." in line:
                 premail, colon, email = line.partition(":")
-                fields["email"] = email
+                fields["email"] = self.overload_fields(fields["email"], email)
             elif len(tokens) > 1 and tokens[-2] in states:
-                fields["state"] = tokens[-2]
+                fields["state"] = self.overload_fields(fields["state"], tokens[-2])  #tokens[-2]
                 if len(tokens) > 3:
-                    fields["city"] = ' '.join(tokens[0:-2]).replace(",","")
+                    fields["city"] = self.overload_fields(fields["city"], ' '.join(tokens[0:-2]).replace(",","")) #' '.join(tokens[0:-2]).replace(",","")
                 else:
-                    fields["city"] = tokens[0].replace(",","")
-                fields["zip"] = tokens[-1]
+                    fields["city"] = self.overload_fields(fields["city"], tokens[0].replace(",",""))
+                fields["zip"] = self.overload_fields(fields["zip"], tokens[-1])
             elif len(tokens) > 2 and tokens[-1].isnumeric() and tokens[-2].upper() in states:
-                fields["state"] = tokens[-2]
+                fields["state"] = self.overload_fields(fields["state"], tokens[-2])
                 if len(tokens) > 3:
-                    fields["city"] = ' '.join(tokens[0:-2]).replace(",","")
+                    fields["city"] = self.overload_fields(fields["city"], ' '.join(tokens[0:-2]).replace(",",""))
                 else:
-                    fields["city"] = tokens[0].replace(",","")
-                fields["zip"] = tokens[-1]
+                    fields["city"] = self.overload_fields(fields["city"], tokens[0].replace(",",""))
+                fields["zip"] = self.overload_fields(fields["zip"], tokens[-1])
+            elif 'district of' in line.lower():
+                fields["purview"] = self.overload_fields(fields["purview"], line)
             elif any(word in line for word in postal_words):
-                fields["postal_address"][0] = line
+                if not fields["postal_address"][0]:
+                    fields["postal_address"][0] = line
+                else:
+                    fields["postal_address"].insert(1, line)
             elif any(word in line.title() for word in postal_words):
-                fields["postal_address"][0] = line
+                if not fields["postal_address"][0]:
+                    fields["postal_address"][0] = line
+                else:
+                    fields["postal_address"].insert(1, line)
             elif any(word in line.title() for word in second_address):
-                fields["postal_address"][1] = line
+                if not fields["postal_address"][1]:
+                    fields["postal_address"][1] = line
+                else:
+                    fields["postal_address"].append(line)
             elif any(word in line for word in org_words):
-                fields["org"] = line
+                fields["org"] = self.overload_fields(fields["org"], line)
             elif any(word in line.title() for word in building_words):
-                fields["building"] = line
+                fields["building"] = self.overload_fields(fields["building"], line)
             elif len(tokens) > 1 and tokens[0].isnumeric() and tokens[1].isalpha():
                 fields["postal_address"][0] = line
             elif len(tokens) > 2 and tokens[0].isnumeric() and tokens[2].isalpha():
                 fields["postal_address"][0] = line
             elif self.clean_number(line).isnumeric():
                 if "(" in line and ")" in line:
-                    fields["phone"] = self.clean_number(line)
+                    fields["phone"] = self.overload_fields(fields["phone"], self.clean_number(line))
                 elif len(self.clean_number(line,' ').split()) == 1:
-                    fields["id_number"] = line
+                    fields["id_number"] = self.overload_fields(fields["id_number"], line)
                 elif len(self.clean_number(line,' ').split()[-1]) == 4 and len(self.clean_number(line,' ').split()[-2]) == 3:
-                    fields["phone"] = self.clean_number(line)
+                    fields["phone"] = self.overload_fields(fields["phone"], self.clean_number(line))
                 elif len(self.clean_number(line)) == 10 or len(self.clean_number(line)) == 7:
-                    fields["phone"] = self.clean_number(line)
+                    fields["phone"] = self.overload_fields(fields["phone"], self.clean_number(line))
                 else:
-                    fields["id_number"] = line
+                    fields["id_number"] = self.overload_fields(fields["id_number"], line)
             elif "Fax" in line.title():
                 fax = line.partition(":")[2]
-                fields["fax"] = self.clean_number(fax)
+                fields["fax"] = self.overload_fields(fields["fax"], self.clean_number(fax))
             elif line in italics:
                 if "lead" in line.lower():
-                    fields["lead"] = line
+                    fields["lead"] = self.overload_fields(fields["lead"], line)
                 elif "designation" in line.lower():
                     designation = line.partition(":")[2]
                     fields["designation"].append(designation)
                 elif "terminated" in line.lower():
                     date = line.partition(":")[2]
-                    fields["date_terminated"] = date
+                    fields["date_terminated"] = self.overload_fields(fields["date_terminated"], date)
                 elif "notice" in line.lower():
-                    fields["to_be_noticed"] = line
+                    fields["to_be_noticed"] = self.overload_fields(fields["to_be_noticed"], line)
                 else:
                     fields["other_italics"].append(line)
             elif "pro se" in line.lower():
-                fields["pro_se"] = line
+                fields["pro_se"] = self.overload_fields(fields["pro_se"], line)
             elif any(word in line.title() for word in self.roles):
-                fields["title"] = line
+                fields["title"] = self.overload_fields(fields["title"], line)
             elif any(word in line.title() for word in title_words):
-                fields["title"] = line
+                fields["title"] = self.overload_fields(fields["title"], line)
             elif "district" in line.lower():
-                fields["district"] = line
+                fields["district"] = self.overload_fields(fields["district"], line)
             elif line[-6:].isnumeric():
-                fields["id_number"] = line
+                fields["id_number"] = self.overload_fields(fields["id_number"], line)
             else:
                 if "(" in line and ")" in line and "-" in line:
-                    fields["phone"] = line
+                    fields["phone"] = self.overload_fields(fields["phone"], line)
+                elif len(line) > 12 and line[3] == '-' and line[0:3].isnumeric() and line[4:7].isnumeric() and line[7] == '-' and line[8:12].isnumeric():
+                    fields["phone"] = self.overload_fields(fields["phone"], line)
                 else:
-                    fields["unsure"] = line
+                    label = "unsure_"+str(unsure)
+                    fields[label] = line
+                    unsure += 1
         for field in fields.keys():
             if fields[field]:
                 field_val = fields[field]
@@ -718,12 +740,6 @@ class DocketParser:
                 self.parsed_docket[role][key]["other_fields"] += other_fields
             else:
                 self.parsed_docket[role][key]["other_fields"] = other_fields
-#            if not self.parsed_docket[role][key]["other_fields"]:
-#                self.parsed_docket[role][key]["other_fields"] = other_fields
-#            else:
-#                for field in other_fields:
-#                    self.parsed_docket[role][key]["other_fields"].append(field)
-#        other_fields.append({"field_name_attempt":field_name,"field_value_attempt":field_val})
     
     def refine_role_blobs(self, role, key, name):
         addl_fields = []
@@ -791,12 +807,18 @@ class DocketParser:
                     self.refine_role_blobs(role.lower(), num, self.parsed_docket[role.lower()][num]["name_attempt"])
                     
     def main(self):
-        self.open_docket()
-        self.update_role_list()
-        self.parse_docket_header()
-        self.parse_docket()
-        self.refine_header_parsing()
-        self.refine_blob_parsing()
+        try:
+            self.open_docket()
+            self.update_role_list()
+            self.parse_docket_header()
+            self.parse_docket()
+            self.refine_header_parsing()
+            self.refine_blob_parsing()
+            if self.parsed_docket["missed_parses"]:
+                print("Hey! Listen! We failed to parse {c} lines in file {f}".format(c=len(self.parsed_docket["missed_parses"]), f=self.case_id))
+        except Exception as e:
+            print('Hey! Listen! File {p} failed with exception "{f}"'.format(p=os.path.basename(self.docket), f=e))
+            self.parsed_docket["FAILURE"] = True
 
 
 if __name__ == "__main__":
