@@ -262,7 +262,8 @@ class DocketParser:
         self.parsed_docket["docket_text"] = {"rows":[]}
         first = True
         for row in table.find_all('tr'):
-            full_row = {"date":'',"number":'',"links":'',"text":''}
+#            full_row = {"date":'',"number":'',"links":'',"text":''}
+            full_row = {"date":'',"number":'',"links":{},"text":''}
             for column in row.find_all('td'):
                 if first:
                     full_row["text"] = row.get_text()
@@ -275,7 +276,10 @@ class DocketParser:
                         full_row["number"] = column.get_text().strip()
                     else:
                         full_row["text"] = column.get_text()
-            full_row["links"] = [str(a['href']) for a in row.find_all('a') if a.has_attr('href')]
+#            full_row["links"] = [str(a['href']) for a in row.find_all('a') if a.has_attr('href')]
+            the_links = [[str(a['href']),a.get_text()] for a in row.find_all('a') if a.has_attr('href')]
+            for link in the_links:
+                full_row["links"][link[0]] = link[1]
             self.parsed_docket["docket_text"]["rows"].append(full_row)
             
     def parse_docket_footers(self, table):
