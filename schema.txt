@@ -1,0 +1,316 @@
+Table judge_on_case{
+    id int [pk]
+    judge_nid int [ref: > federal_judges.id]
+    case_id varchar [ref: > cases.case_id]
+    date_start date
+    date_end date
+    name varchar
+    status varchar
+    magistrate boolean
+}
+
+Table federal_judges {
+    id int [pk]
+    nid int
+    jid int
+    first_name varchar
+    middle_name varchar
+    last_name varchar
+    suffix varchar
+    birthday date
+    birthday_year_only boolean
+    birth_city varchar
+    birth_state varchar
+    deathday date
+    deathday_year_only boolean
+    death_city varchar
+    death_state varchar
+    gender varchar
+    race_or_ethnicity varchar
+    professional_career varchar
+    other_nominations_or_recess_appointments varchar
+    appointments int [ref: < federal_judge_appointments.id]
+    other_federal_judicial_service int [ref: < federal_judge_other_federal_judicial_service.id]
+    schools int [ref: > federal_judge_schools.id]
+    cases int [ref: > judge_on_case.id]
+}
+
+Table federal_judge_appointments {
+    id int [pk]
+    judge_nid int [ref: > federal_judges.id]
+    appointment_number int
+    court_type varchar
+    court_name varchar
+    appointment_title varchar
+    appointing_president varchar
+    appointing_president_party varchar
+    reappointing_president varchar
+    reappointing_president_party varchar
+    aba_rating varchar
+    seat_id varchar
+    statute_authorizing_new_seat varchar
+    recess_appointment_date varchar
+    nomination_date varchar
+    committee_referral_date varchar
+    hearing_date varchar
+    judiciary_committee_action varchar
+    committee_action_date varchar
+    senate_vote_type varchar
+    ayes_nayes varchar
+    confirmation_date varchar
+    commission_date varchar
+    service_as_chief_judge_begin int
+    service_as_chief_judge_end int
+    second_service_as_chief_judge_begin int
+    second_service_as_chief_judge_end int
+    senior_status_date varchar
+    termination_reason varchar
+    termination_date varchar
+}
+
+Table federal_judge_other_federal_judicial_service {
+    id int [pk]
+    judge_nid int [ref: > federal_judges.id]
+    appointment_number int
+    service varchar
+}
+
+Table federal_judge_schools {
+    id int [pk]
+    judge_nid int [ref: < federal_judges.id]
+    attendance_sequence int
+    school varchar
+    degree varchar
+    degree_year varchar
+}
+
+Table cases {
+    id int
+    case_id varchar [pk]
+    docket_flags varchar
+    case_type varchar
+    case_name varchar
+    court_type varchar
+    city_id int [ref: - cities.id]
+    district_id int [ref: - district_courts.id]
+    circuit_id int [ref: - circuit_courts.id]
+    year int
+    date_filed date
+    date_terminated date
+    case_duration int
+    case_status varchar
+    other_case_numbers int [ref: < cases_in_other_courts.id]
+    judges int [ref: < judge_on_case.id]
+    jury_demand varchar
+    demand varchar
+    cause varchar
+    jurisdiction varchar
+    download_court varchar
+    docket_entries int [ref: < docket_entries.id]
+    nature_of_suit_id int [ref: > nature_of_suit.id]
+    entered_in_error boolean
+    sealed boolean
+    parties_id int [ref: < parties.id]
+    charges_id int [ref: < charges.id]
+    charge_labels int [ref: < charge_label.id]
+    disposition_labels int [ref: < disposition_label.id]
+    attorneys int [ref: < attorneys.id]
+    docket_html int [ref: - docket_html.id]
+    user_tags int [ref: < user_tags.id]
+}
+
+Table docket_html {
+    id int [pk]
+    case_id varchar [ref: - cases.case_id]
+    html varchar
+    parse varchar
+}
+
+Table users {
+    id int
+    user_id varchar [pk]
+    tag_count int
+    skip_count int
+    super_user boolean
+    user_tags int [ref: < user_tags.id]
+}
+
+Table tags {
+    id int [pk]
+    category varchar
+    label varchar
+    count int
+    user_tags int [ref: < user_tags.id]
+}
+
+Table user_tags {
+    id int [pk]
+    users_id varchar [ref: - users.user_id]
+    case_id varchar [ref: > cases.case_id]
+    tag_id int [ref: > tags.id]
+    docket_entry_id int [ref: > docket_entries.id]
+    time_spent int
+    docket_view boolean
+}
+
+Table nature_of_suit {
+    id int [pk]
+    case_id varchar [ref: < cases.case_id]
+    code int
+    label varchar
+    category varchar
+}
+
+Table cases_in_other_courts {
+    id int [pk]
+    case_id varchar [ref: > cases.case_id]
+    other_case_id varchar
+    category varchar
+    lead boolean
+}
+
+Table cities {
+    id int [pk]
+    city varchar
+    state varchar
+    case_id varchar [ref: < cases.case_id]
+    district_id int [ref: - district_courts.id]
+    circuit_id int [ref: - circuit_courts.id]
+    firm_id int [ref: < firms.id]
+}
+
+Table district_courts {
+    id int [pk]
+    label varchar
+    full_label varchar
+    abbreviation varchar
+    circuit_id int [ref: > circuit_courts.id]
+    primary_city_id int [ref: - cities.id]
+    case_id varchar [ref: < cases.case_id]
+}
+
+Table circuit_courts {
+    id int [pk]
+    label varchar
+    full_label varchar
+    abbreviation varchar
+    primary_city_id int [ref: - cities.id]
+    district_id int [ref: < district_courts.id]
+    case_id varchar [ref: < cases.case_id]
+}
+
+Table docket_entries {
+    id int [pk]
+    entry_number int
+    ordinal_number int
+    url varchar
+    attachments int [ref: < attachments.id]
+    jurisdiction varchar
+    case_id varchar [ref: > cases.case_id]
+    judge_name varchar
+    date_filed date
+    text varchar
+    judge_nid int [ref: < federal_judges.id]
+    entered_in_error boolean
+    sealed boolean
+    user_tags int [ref: < user_tags.id]
+}
+
+Table attachments {
+    id int [pk]
+    entry_id int [ref: > docket_entries.id]
+    url varchar
+    text varchar
+}
+
+Table attorneys {
+    id int [pk]
+    name varchar
+    firm_id int [ref: > firms.id]
+    contact int [ref: < contacts.attorney_id]
+    designations int [ref: < designations.id]
+    date_terminated date
+    case_id varchar [ref: > cases.case_id]
+    party_id int [ref: > parties.id]
+}
+
+Table contacts {
+    id int [pk]
+    attorney_id int [ref: - attorneys.id]
+    category varchar
+    text varchar
+}
+
+Table designations {
+    id int [pk]
+    label varchar
+}
+
+Table firms {
+    id int [pk]
+    name varchar
+    street_address varchar
+    city_id int [ref: > cities.id]
+    zipcode varchar
+    attorneys int [ref: < attorneys.id]
+}
+
+Table parties {
+    id int [pk]
+    name varchar
+    alias_id int [ref: < party_alias.id]
+    date_terminated date
+    judge_assigned varchar
+    judge_referred varchar
+    appeals_case_number_id int [ref: < cases_in_other_courts.id]
+    title varchar
+    capacity varchar
+    role int [ref: > roles.id]
+    attorneys int [ref: < attorneys.id]
+    charges int [ref: > charges.id]
+    case_id varchar [ref: > cases.case_id]
+    is_gov boolean
+}
+
+Table roles {
+    id int [pk]
+    label varchar
+}
+
+Table party_alias {
+    id int [pk]
+    party_id int [ref: > parties.id]
+    text varchar
+}
+
+Table charges {
+    id int [pk]
+    party_id int [ref: > parties.id]
+    case_id varchar [ref: > cases.case_id]
+    category varchar
+    label_id int [ref: > charge_label.id]
+    counts varchar
+    status varchar
+    disposition_text varchar
+    disposition int [ref: < disposition_detail.id]
+}
+
+Table charge_label {
+    id int [pk]
+    label varchar
+    cases varchar [ref: > cases.case_id]
+}
+
+Table disposition_detail {
+    id int [pk]
+    charge_id int [ref: > charges.id]
+    label_id int [ref: > disposition_label.id]
+    value int
+    units varchar
+}
+
+Table disposition_label {
+    id int [pk]
+    label varchar
+    cases varchar [ref: > cases.case_id]
+}

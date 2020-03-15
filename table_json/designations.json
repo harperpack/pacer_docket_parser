@@ -1,0 +1,35 @@
+{
+    "PRO SE": {
+        "label": "Pro Se"
+    },
+    "ATTORNEY TO BE NOTICED": {
+        "label": "Attorney to be Noticed"
+    },
+    "LEAD ATTORNEY": {
+        "label": "Lead Attorney"
+    },
+    "Public Defender or Community Defender Appointment": {
+        "label": "Public Defender or Community Defender Appointment"
+    },
+    "CJA Appointment": {
+        "label": "CJA Appointment"
+    },
+    "Retained": {
+        "label": "Retained"
+    },
+    "Assistant US Attorney": {
+        "label": "Assistant US Attorney"
+    },
+    "Government Attorney": {
+        "label": "Government Attorney"
+    },
+    "Pretrial Services": {
+        "label": "Pretrial Services"
+    },
+    "PRO HAC VICE": {
+        "label": "Pro Hac Vice"
+    },
+    "Pro Bono": {
+        "label": "Pro Bono"
+    }
+}

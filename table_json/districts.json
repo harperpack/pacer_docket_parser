@@ -1,0 +1,732 @@
+{
+    "rows": [
+        {
+            "district": "District of Columbia",
+            "full_name": "United States District Court for the District of Columbia",
+            "abbreviation": "D.D.C.",
+            "state": "DC",
+            "city": "Washington, D.C.",
+            "circuit_court": "District of Columbia Circuit"
+        },
+        {
+            "district": "District of Maine",
+            "full_name": "United States District Court for the District of Maine",
+            "abbreviation": "D. Me.",
+            "state": "ME",
+            "city": "Portland",
+            "circuit_court": "First Circuit"
+        },
+        {
+            "district": "District of Massachusetts",
+            "full_name": "United States District Court for the District of Massachusetts",
+            "abbreviation": "D. Mass.",
+            "state": "MA",
+            "city": "Boston",
+            "circuit_court": "First Circuit"
+        },
+        {
+            "district": "District of New Hampshire",
+            "full_name": "United States District Court for the District of New Hampshire",
+            "abbreviation": "D.N.H.",
+            "state": "NH",
+            "city": "Concord",
+            "circuit_court": "First Circuit"
+        },
+        {
+            "district": "District of Puerto Rico",
+            "full_name": "United States District Court for the District of Puerto Rico",
+            "abbreviation": "D.P.R.",
+            "state": "PR",
+            "city": "San Juan",
+            "circuit_court": "First Circuit"
+        },
+        {
+            "district": "District of Rhode Island",
+            "full_name": "United States District Court for the District of Rhode Island",
+            "abbreviation": "D.R.I.",
+            "state": "RI",
+            "city": "Providence",
+            "circuit_court": "First Circuit"
+        },
+        {
+            "district": "District of Connecticut",
+            "full_name": "United States District Court for the District of Connecticut",
+            "abbreviation": "D. Conn.",
+            "state": "CT",
+            "city": "New Haven",
+            "circuit_court": "Second Circuit"
+        },
+        {
+            "district": "Eastern District of New York",
+            "full_name": "United States District Court for the Eastern District of New York",
+            "abbreviation": "E.D.N.Y.",
+            "state": "NY",
+            "city": "Brooklyn",
+            "circuit_court": "Second Circuit"
+        },
+        {
+            "district": "Northern District of New York",
+            "full_name": "United States District Court for the Northern District of New York",
+            "abbreviation": "N.D.N.Y.",
+            "state": "NY",
+            "city": "Albany",
+            "circuit_court": "Second Circuit"
+        },
+        {
+            "district": "Southern District of New York",
+            "full_name": "United States District Court for the Southern District of New York",
+            "abbreviation": "S.D.N.Y.",
+            "state": "NY",
+            "city": "Manhattan",
+            "circuit_court": "Second Circuit"
+        },
+        {
+            "district": "Western District of New York",
+            "full_name": "United States District Court for the Western District of New York",
+            "abbreviation": "W.D.N.Y.",
+            "state": "NY",
+            "city": "Buffalo",
+            "circuit_court": "Second Circuit"
+        },
+        {
+            "district": "District of Vermont",
+            "full_name": "United States District Court for the District of Vermont",
+            "abbreviation": "D. Vt.",
+            "state": "VT",
+            "city": "Burlington",
+            "circuit_court": "Second Circuit"
+        },
+        {
+            "district": "District of Delaware",
+            "full_name": "United States District Court for the District of Delaware",
+            "abbreviation": "D. Del.",
+            "state": "DE",
+            "city": "Wilmington",
+            "circuit_court": "Third Circuit"
+        },
+        {
+            "district": "District of New Jersey",
+            "full_name": "United States District Court for the District of New Jersey",
+            "abbreviation": "D.N.J.",
+            "state": "NJ",
+            "city": "Camden",
+            "circuit_court": "Third Circuit"
+        },
+        {
+            "district": "Eastern District of Pennsylvania",
+            "full_name": "United States District Court for the Eastern District of Pennsylvania",
+            "abbreviation": "E.D. Pa.",
+            "state": "PA",
+            "city": "Philadelphia",
+            "circuit_court": "Third Circuit"
+        },
+        {
+            "district": "Middle District of Pennsylvania",
+            "full_name": "United States District Court for the Middle District of Pennsylvania",
+            "abbreviation": "M.D. Pa.",
+            "state": "PA",
+            "city": "Harrisburg",
+            "circuit_court": "Third Circuit"
+        },
+        {
+            "district": "Western District of Pennsylvania",
+            "full_name": "United States District Court for the Western District of Pennsylvania",
+            "abbreviation": "W.D. Pa.",
+            "state": "PA",
+            "city": "Pittsburgh",
+            "circuit_court": "Third Circuit"
+        },
+        {
+            "district": "District of Maryland",
+            "full_name": "United States District Court for the District of Maryland",
+            "abbreviation": "D. Md.",
+            "state": "MD",
+            "city": "Baltimore",
+            "circuit_court": "Fourth Circuit"
+        },
+        {
+            "district": "Eastern District of North Carolina",
+            "full_name": "United States District Court for the Eastern District of North Carolina",
+            "abbreviation": "E.D.N.C.",
+            "state": "NC",
+            "city": "Raleigh",
+            "circuit_court": "Fourth Circuit"
+        },
+        {
+            "district": "Middle District of North Carolina",
+            "full_name": "United States District Court for the Middle District of North Carolina",
+            "abbreviation": "M.D.N.C.",
+            "state": "NC",
+            "city": "Greensboro",
+            "circuit_court": "Fourth Circuit"
+        },
+        {
+            "district": "Western District of North Carolina",
+            "full_name": "United States District Court for the Western District of North Carolina",
+            "abbreviation": "W.D.N.C.",
+            "state": "NC",
+            "city": "Charlotte",
+            "circuit_court": "Fourth Circuit"
+        },
+        {
+            "district": "District of South Carolina",
+            "full_name": "United States District Court for the District of South Carolina",
+            "abbreviation": "D.S.C.",
+            "state": "SC",
+            "city": "Charleston",
+            "circuit_court": "Fourth Circuit"
+        },
+        {
+            "district": "Eastern District of Virginia",
+            "full_name": "United States District Court for the Eastern District of Virginia",
+            "abbreviation": "E.D. Va.",
+            "state": "VA",
+            "city": "Alexandria",
+            "circuit_court": "Fourth Circuit"
+        },
+        {
+            "district": "Western District of Virginia",
+            "full_name": "United States District Court for the Western District of Virginia",
+            "abbreviation": "W.D. Va.",
+            "state": "VA",
+            "city": "Roanoke",
+            "circuit_court": "Fourth Circuit"
+        },
+        {
+            "district": "Northern District of West Virginia",
+            "full_name": "United States District Court for the Northern District of West Virginia",
+            "abbreviation": "N.D. W. Va.",
+            "state": "WV",
+            "city": "Martinsburg",
+            "circuit_court": "Fourth Circuit"
+        },
+        {
+            "district": "Southern District of West Virginia",
+            "full_name": "United States District Court for the Southern District of West Virginia",
+            "abbreviation": "S.D. W. Va.",
+            "state": "WV",
+            "city": "Charleston",
+            "circuit_court": "Fourth Circuit"
+        },
+        {
+            "district": "Eastern District of Louisiana",
+            "full_name": "United States District Court for the Eastern District of Louisiana",
+            "abbreviation": "E.D. La.",
+            "state": "LA",
+            "city": "New Orleans",
+            "circuit_court": "Fifth Circuit"
+        },
+        {
+            "district": "Middle District of Louisiana",
+            "full_name": "United States District Court for the Middle District of Louisiana",
+            "abbreviation": "M.D. La.",
+            "state": "LA",
+            "city": "Baton Rouge",
+            "circuit_court": "Fifth Circuit"
+        },
+        {
+            "district": "Western District of Louisiana",
+            "full_name": "United States District Court for the Western District of Louisiana",
+            "abbreviation": "W.D. La.",
+            "state": "LA",
+            "city": "Shreveport",
+            "circuit_court": "Fifth Circuit"
+        },
+        {
+            "district": "Northern District of Mississippi",
+            "full_name": "United States District Court for the Northern District of Mississippi",
+            "abbreviation": "N.D. Miss.",
+            "state": "MS",
+            "city": "Oxford",
+            "circuit_court": "Fifth Circuit"
+        },
+        {
+            "district": "Southern District of Mississippi",
+            "full_name": "United States District Court for the Southern District of Mississippi",
+            "abbreviation": "S.D. Miss.",
+            "state": "MS",
+            "city": "Jackson",
+            "circuit_court": "Fifth Circuit"
+        },
+        {
+            "district": "Eastern District of Texas",
+            "full_name": "United States District Court for the Eastern District of Texas",
+            "abbreviation": "E.D. Tex.",
+            "state": "TX",
+            "city": "Tyler",
+            "circuit_court": "Fifth Circuit"
+        },
+        {
+            "district": "Northern District of Texas",
+            "full_name": "United States District Court for the Northern District of Texas",
+            "abbreviation": "N.D. Tex.",
+            "state": "TX",
+            "city": "Dallas",
+            "circuit_court": "Fifth Circuit"
+        },
+        {
+            "district": "Southern District of Texas",
+            "full_name": "United States District Court for the Southern District of Texas",
+            "abbreviation": "S.D. Tex.",
+            "state": "TX",
+            "city": "Houston",
+            "circuit_court": "Fifth Circuit"
+        },
+        {
+            "district": "Western District of Texas",
+            "full_name": "United States District Court for the Western District of Texas",
+            "abbreviation": "W.D. Tex.",
+            "state": "TX",
+            "city": "San Antonio",
+            "circuit_court": "Fifth Circuit"
+        },
+        {
+            "district": "Eastern District of Kentucky",
+            "full_name": "United States District Court for the Eastern District of Kentucky",
+            "abbreviation": "E.D. Ky.",
+            "state": "KY",
+            "city": "Lexington",
+            "circuit_court": "Sixth Circuit"
+        },
+        {
+            "district": "Western District of Kentucky",
+            "full_name": "United States District Court for the Western District of Kentucky",
+            "abbreviation": "W.D. Ky.",
+            "state": "KY",
+            "city": "Louisville",
+            "circuit_court": "Sixth Circuit"
+        },
+        {
+            "district": "Eastern District of Michigan",
+            "full_name": "United States District Court for the Eastern District of Michigan",
+            "abbreviation": "E.D. Mich.",
+            "state": "MI",
+            "city": "Detroit",
+            "circuit_court": "Sixth Circuit"
+        },
+        {
+            "district": "Western District of Michigan",
+            "full_name": "United States District Court for the Western District of Michigan",
+            "abbreviation": "W.D. Mich.",
+            "state": "MI",
+            "city": "Grand Rapids",
+            "circuit_court": "Sixth Circuit"
+        },
+        {
+            "district": "Northern District of Ohio",
+            "full_name": "United States District Court for the Northern District of Ohio",
+            "abbreviation": "N.D. Ohio",
+            "state": "OH",
+            "city": "Cleveland",
+            "circuit_court": "Sixth Circuit"
+        },
+        {
+            "district": "Southern District of Ohio",
+            "full_name": "United States District Court for the Southern District of Ohio",
+            "abbreviation": "S.D. Ohio",
+            "state": "OH",
+            "city": "Columbus",
+            "circuit_court": "Sixth Circuit"
+        },
+        {
+            "district": "Eastern District of Tennessee",
+            "full_name": "United States District Court for the Eastern District of Tennessee",
+            "abbreviation": "E.D. Tenn.",
+            "state": "TN",
+            "city": "Knoxville",
+            "circuit_court": "Sixth Circuit"
+        },
+        {
+            "district": "Middle District of Tennessee",
+            "full_name": "United States District Court for the Middle District of Tennessee",
+            "abbreviation": "M.D. Tenn.",
+            "state": "TN",
+            "city": "Nashville",
+            "circuit_court": "Sixth Circuit"
+        },
+        {
+            "district": "Western District of Tennessee",
+            "full_name": "United States District Court for the Western District of Tennessee",
+            "abbreviation": "W.D. Tenn.",
+            "state": "TN",
+            "city": "Memphis",
+            "circuit_court": "Sixth Circuit"
+        },
+        {
+            "district": "Central District of Illinois",
+            "full_name": "United States District Court for the Central District of Illinois",
+            "abbreviation": "C.D. Ill.",
+            "state": "IL",
+            "city": "Springfield",
+            "circuit_court": "Seventh Circuit"
+        },
+        {
+            "district": "Northern District of Illinois",
+            "full_name": "United States District Court for the Northern District of Illinois",
+            "abbreviation": "N.D. Ill.",
+            "state": "IL",
+            "city": "Chicago",
+            "circuit_court": "Seventh Circuit"
+        },
+        {
+            "district": "Southern District of Illinois",
+            "full_name": "United States District Court for the Southern District of Illinois",
+            "abbreviation": "S.D. Ill.",
+            "state": "IL",
+            "city": "East St. Louis",
+            "circuit_court": "Seventh Circuit"
+        },
+        {
+            "district": "Northern District of Indiana",
+            "full_name": "United States District Court for the Northern District of Indiana",
+            "abbreviation": "N.D. Ind.",
+            "state": "IN",
+            "city": "South Bend",
+            "circuit_court": "Seventh Circuit"
+        },
+        {
+            "district": "Southern District of Indiana",
+            "full_name": "United States District Court for the Southern District of Indiana",
+            "abbreviation": "S.D. Ind.",
+            "state": "IN",
+            "city": "Indianapolis",
+            "circuit_court": "Seventh Circuit"
+        },
+        {
+            "district": "Eastern District of Wisconsin",
+            "full_name": "United States District Court for the Eastern District of Wisconsin",
+            "abbreviation": "E.D. Wis.",
+            "state": "WI",
+            "city": "Milwaukee",
+            "circuit_court": "Seventh Circuit"
+        },
+        {
+            "district": "Western District of Wisconsin",
+            "full_name": "United States District Court for the Western District of Wisconsin",
+            "abbreviation": "W.D. Wis.",
+            "state": "WI",
+            "city": "Madison",
+            "circuit_court": "Seventh Circuit"
+        },
+        {
+            "district": "Eastern District of Arkansas",
+            "full_name": "United States District Court for the Eastern District of Arkansas",
+            "abbreviation": "E.D. Ark.",
+            "state": "AR",
+            "city": "Little Rock",
+            "circuit_court": "Eighth Circuit"
+        },
+        {
+            "district": "Western District of Arkansas",
+            "full_name": "United States District Court for the Western District of Arkansas",
+            "abbreviation": "W.D. Ark.",
+            "state": "AR",
+            "city": "Fort Smith",
+            "circuit_court": "Eighth Circuit"
+        },
+        {
+            "district": "Northern District of Iowa",
+            "full_name": "United States District Court for the Northern District of Iowa",
+            "abbreviation": "N.D. Iowa",
+            "state": "IA",
+            "city": "Cedar Rapids",
+            "circuit_court": "Eighth Circuit"
+        },
+        {
+            "district": "Southern District of Iowa",
+            "full_name": "United States District Court for the Southern District of Iowa",
+            "abbreviation": "S.D. Iowa",
+            "state": "IA",
+            "city": "Des Moines",
+            "circuit_court": "Eighth Circuit"
+        },
+        {
+            "district": "District of Minnesota",
+            "full_name": "United States District Court for the District of Minnesota",
+            "abbreviation": "D. Minn.",
+            "state": "MN",
+            "city": "Minneapolis",
+            "circuit_court": "Eighth Circuit"
+        },
+        {
+            "district": "Eastern District of Missouri",
+            "full_name": "United States District Court for the Eastern District of Missouri",
+            "abbreviation": "E.D. Mo.",
+            "state": "MO",
+            "city": "St. Louis",
+            "circuit_court": "Eighth Circuit"
+        },
+        {
+            "district": "Western District of Missouri",
+            "full_name": "United States District Court for the Western District of Missouri",
+            "abbreviation": "W.D. Mo.",
+            "state": "MO",
+            "city": "Kansas City",
+            "circuit_court": "Eighth Circuit"
+        },
+        {
+            "district": "District of Nebraska",
+            "full_name": "United States District Court for the District of Nebraska",
+            "abbreviation": "D. Neb.",
+            "state": "NE",
+            "city": "Omaha",
+            "circuit_court": "Eighth Circuit"
+        },
+        {
+            "district": "District of North Dakota",
+            "full_name": "United States District Court for the District of North Dakota",
+            "abbreviation": "D.N.D.",
+            "state": "ND",
+            "city": "Bismarck",
+            "circuit_court": "Eighth Circuit"
+        },
+        {
+            "district": "District of South Dakota",
+            "full_name": "United States District Court for the District of South Dakota",
+            "abbreviation": "D.S.D.",
+            "state": "SD",
+            "city": "Sioux Falls",
+            "circuit_court": "Eighth Circuit"
+        },
+        {
+            "district": "District of Alaska",
+            "full_name": "United States District Court for the District of Alaska",
+            "abbreviation": "D. Alaska",
+            "state": "AK",
+            "city": "Anchorage",
+            "circuit_court": "Ninth Circuit"
+        },
+        {
+            "district": "District of Arizona",
+            "full_name": "United States District Court for the District of Arizona",
+            "abbreviation": "D. Ariz.",
+            "state": "AZ",
+            "city": "Phoenix",
+            "circuit_court": "Ninth Circuit"
+        },
+        {
+            "district": "Central District of California",
+            "full_name": "United States District Court for the Central District of California",
+            "abbreviation": "C.D. Cal.",
+            "state": "CA",
+            "city": "Los Angeles",
+            "circuit_court": "Ninth Circuit"
+        },
+        {
+            "district": "Eastern District of California",
+            "full_name": "United States District Court for the Eastern District of California",
+            "abbreviation": "E.D. Cal.",
+            "state": "CA",
+            "city": "Sacramento",
+            "circuit_court": "Ninth Circuit"
+        },
+        {
+            "district": "Northern District of California",
+            "full_name": "United States District Court for the Northern District of California",
+            "abbreviation": "N.D. Cal.",
+            "state": "CA",
+            "city": "San Francisco",
+            "circuit_court": "Ninth Circuit"
+        },
+        {
+            "district": "Southern District of California",
+            "full_name": "United States District Court for the Southern District of California",
+            "abbreviation": "S.D. Cal.",
+            "state": "CA",
+            "city": "San Diego",
+            "circuit_court": "Ninth Circuit"
+        },
+        {
+            "district": "District of Hawaii",
+            "full_name": "United States District Court for the District of Hawaii",
+            "abbreviation": "D. Haw.",
+            "state": "HI",
+            "city": "Honolulu",
+            "circuit_court": "Ninth Circuit"
+        },
+        {
+            "district": "District of Idaho",
+            "full_name": "United States District Court for the District of Idaho",
+            "abbreviation": "D. Idaho",
+            "state": "ID",
+            "city": "Boise",
+            "circuit_court": "Ninth Circuit"
+        },
+        {
+            "district": "District of Montana",
+            "full_name": "United States District Court for the District of Montana",
+            "abbreviation": "D. Mont.",
+            "state": "MT",
+            "city": "Missoula",
+            "circuit_court": "Ninth Circuit"
+        },
+        {
+            "district": "District of Nevada",
+            "full_name": "United States District Court for the District of Nevada",
+            "abbreviation": "D. Nev.",
+            "state": "NV",
+            "city": "Las Vegas",
+            "circuit_court": "Ninth Circuit"
+        },
+        {
+            "district": "District of Oregon",
+            "full_name": "United States District Court for the District of Oregon",
+            "abbreviation": "D. Ore.",
+            "state": "OR",
+            "city": "Portland",
+            "circuit_court": "Ninth Circuit"
+        },
+        {
+            "district": "Eastern District of Washington",
+            "full_name": "United States District Court for the Eastern District of Washington",
+            "abbreviation": "E.D. Wash.",
+            "state": "WA",
+            "city": "Spokane",
+            "circuit_court": "Ninth Circuit"
+        },
+        {
+            "district": "Western District of Washington",
+            "full_name": "United States District Court for the Western District of Washington",
+            "abbreviation": "W.D. Wash.",
+            "state": "WA",
+            "city": "Seattle",
+            "circuit_court": "Ninth Circuit"
+        },
+        {
+            "district": "District of Colorado",
+            "full_name": "United States District Court for the District of Colorado",
+            "abbreviation": "D. Colo.",
+            "state": "CO",
+            "city": "Denver",
+            "circuit_court": "Tenth Circuit"
+        },
+        {
+            "district": "District of Kansas",
+            "full_name": "United States District Court for the District of Kansas",
+            "abbreviation": "D. Kan.",
+            "state": "KS",
+            "city": "Kansas City",
+            "circuit_court": "Tenth Circuit"
+        },
+        {
+            "district": "District of New Mexico",
+            "full_name": "United States District Court for the District of New Mexico",
+            "abbreviation": "D.N.M.",
+            "state": "NM",
+            "city": "Albuquerque",
+            "circuit_court": "Tenth Circuit"
+        },
+        {
+            "district": "Eastern District of Oklahoma",
+            "full_name": "United States District Court for the Eastern District of Oklahoma",
+            "abbreviation": "E.D. Okla.",
+            "state": "OK",
+            "city": "Muskogee",
+            "circuit_court": "Tenth Circuit"
+        },
+        {
+            "district": "Northern District of Oklahoma",
+            "full_name": "United States District Court for the Northern District of Oklahoma",
+            "abbreviation": "N.D. Okla.",
+            "state": "OK",
+            "city": "Tulsa",
+            "circuit_court": "Tenth Circuit"
+        },
+        {
+            "district": "Western District of Oklahoma",
+            "full_name": "United States District Court for the Western District of Oklahoma",
+            "abbreviation": "W.D. Okla.",
+            "state": "OK",
+            "city": "Oklahoma City",
+            "circuit_court": "Tenth Circuit"
+        },
+        {
+            "district": "District of Utah",
+            "full_name": "United States District Court for the District of Utah",
+            "abbreviation": "D. Utah",
+            "state": "UT",
+            "city": "Salt Lake City",
+            "circuit_court": "Tenth Circuit"
+        },
+        {
+            "district": "District of Wyoming",
+            "full_name": "United States District Court for the District of Wyoming",
+            "abbreviation": "D. Wyo.",
+            "state": "WY",
+            "city": "Cheyenne",
+            "circuit_court": "Tenth Circuit"
+        },
+        {
+            "district": "Middle District of Alabama",
+            "full_name": "United States District Court for the Middle District of Alabama",
+            "abbreviation": "M.D. Ala.",
+            "state": "AL",
+            "city": "Montgomery",
+            "circuit_court": "Eleventh Circuit"
+        },
+        {
+            "district": "Northern District of Alabama",
+            "full_name": "United States District Court for the Northern District of Alabama",
+            "abbreviation": "N.D. Ala.",
+            "state": "AL",
+            "city": "Birmingham",
+            "circuit_court": "Eleventh Circuit"
+        },
+        {
+            "district": "Southern District of Alabama",
+            "full_name": "United States District Court for the Southern District of Alabama",
+            "abbreviation": "S.D. Ala.",
+            "state": "AL",
+            "city": "Mobile",
+            "circuit_court": "Eleventh Circuit"
+        },
+        {
+            "district": "Middle District of Florida",
+            "full_name": "United States District Court for the Middle District of Florida",
+            "abbreviation": "M.D. Fla.",
+            "state": "FL",
+            "city": "Orlando",
+            "circuit_court": "Eleventh Circuit"
+        },
+        {
+            "district": "Northern District of Florida",
+            "full_name": "United States District Court for the Northern District of Florida",
+            "abbreviation": "N.D. Fla.",
+            "state": "FL",
+            "city": "Tallahassee",
+            "circuit_court": "Eleventh Circuit"
+        },
+        {
+            "district": "Southern District of Florida",
+            "full_name": "United States District Court for the Southern District of Florida",
+            "abbreviation": "S.D. Fla.",
+            "state": "FL",
+            "city": "Miami",
+            "circuit_court": "Eleventh Circuit"
+        },
+        {
+            "district": "Middle District of Georgia",
+            "full_name": "United States District Court for the Middle District of Georgia",
+            "abbreviation": "M.D. Ga.",
+            "state": "GA",
+            "city": "Macon",
+            "circuit_court": "Eleventh Circuit"
+        },
+        {
+            "district": "Northern District of Georgia",
+            "full_name": "United States District Court for the Northern District of Georgia",
+            "abbreviation": "N.D. Ga.",
+            "state": "GA",
+            "city": "Atlanta",
+            "circuit_court": "Eleventh Circuit"
+        },
+        {
+            "district": "Southern District of Georgia",
+            "full_name": "United States District Court for the Southern District of Georgia",
+            "abbreviation": "S.D. Ga.",
+            "state": "GA",
+            "city": "Savannah",
+            "circuit_court": "Eleventh Circuit"
+        }
+    ]
+}

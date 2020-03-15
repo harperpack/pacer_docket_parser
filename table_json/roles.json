@@ -1,0 +1,303 @@
+{
+    "Accountant": {
+        "label": "Accountant"
+    },
+    "Amicus": {
+        "label": "Amicus"
+    },
+    "Appellant": {
+        "label": "Appellant"
+    },
+    "Appellee": {
+        "label": "Appellee"
+    },
+    "Appraiser": {
+        "label": "Appraiser"
+    },
+    "Arbitrator": {
+        "label": "Arbitrator"
+    },
+    "Assistant U.S. Trustee": {
+        "label": "Assistant U.S. Trustee"
+    },
+    "Attorney": {
+        "label": "Attorney"
+    },
+    "Auctioneer": {
+        "label": "Auctioneer"
+    },
+    "Auditor": {
+        "label": "Auditor"
+    },
+    "Broker": {
+        "label": "Broker"
+    },
+    "Claimant": {
+        "label": "Claimant"
+    },
+    "Consolidated Claimant": {
+        "label": "Consolidated Claimant",
+        "alt_label": "Consol Claimant"
+    },
+    "Consolidated Counter Claimant": {
+        "label": "Consolidated Counter Claimant",
+        "alt_label": "Consol Counter Claimant"
+    },
+    "Consolidated Counter Defendant": {
+        "label": "Consolidated Counter Defendant",
+        "alt_label": "Consol Counter Defendant"
+    },
+    "Consolidated Cross Claimant": {
+        "label": "Consolidated Cross Claimant",
+        "alt_label": "Consol Cross Claimant"
+    },
+    "Consolidated Cross Defendant": {
+        "label": "Consolidated Cross Defendant",
+        "alt_label": "Consol Cross Defendant"
+    },
+    "Consolidated Defendant": {
+        "label": "Consolidated Defendant",
+        "alt_label": "Consol Defendant"
+    },
+    "Consolidated Plaintiff": {
+        "label": "Consolidated Plaintiff",
+        "alt_label": "Consol Plaintiff"
+    },
+    "Consolidated Third Party": {
+        "label": "Consolidated Third Party",
+        "alt_label": "Consol Third Party"
+    },
+    "Consolidated Third Party Plaintiff": {
+        "label": "Consolidated Third Party Plaintiff",
+        "alt_label": "Consol Third Party Plaintiff"
+    },
+    "Consultant": {
+        "label": "Consultant"
+    },
+    "Consumer Privacy": {
+        "label": "Consumer Privacy"
+    },
+    "Counter Claimant": {
+        "label": "Counter Claimant",
+        "alt_label": "Counter-Claimant"
+    },
+    "Counter Defendant": {
+        "label": "Counter Defendant",
+        "alt_label": "Counter-Defendant"
+    },
+    "Creditor": {
+        "label": "Creditor"
+    },
+    "Creditor Committee": {
+        "label": "Creditor Committee"
+    },
+    "Creditor Committee Chair": {
+        "label": "Creditor Committee Chair"
+    },
+    "Cross Claimant": {
+        "label": "Cross Claimant",
+        "alt_label": "Cross-Claimant"
+    },
+    "Cross Defendant": {
+        "label": "Cross Defendant",
+        "alt_label": "Cross-Defendant"
+    },
+    "Custodian": {
+        "label": "Custodian"
+    },
+    "Debtor": {
+        "label": "Debtor"
+    },
+    "Debtor In Possession": {
+        "label": "Debtor In Possession",
+        "alt_label": "Debtor-in-Possess"
+    },
+    "Defendant": {
+        "label": "Defendant"
+    },
+    "Examiner": {
+        "label": "Examiner"
+    },
+    "Financial Advisor": {
+        "label": "Financial Advisor"
+    },
+    "Foreign Representative": {
+        "label": "Foreign Representative"
+    },
+    "Garnishee": {
+        "label": "Garnishee"
+    },
+    "Health Care Ombudsman": {
+        "label": "Health Care Ombudsman"
+    },
+    "In Re": {
+        "label": "In Re"
+    },
+    "Interested Party": {
+        "label": "Interested Party"
+    },
+    "Interim Trustee": {
+        "label": "Interim Trustee"
+    },
+    "Interpleader": {
+        "label": "Interpleader"
+    },
+    "Intervenor": {
+        "label": "Intervenor"
+    },
+    "Intervenor Defendant": {
+        "label": "Intervenor Defendant",
+        "alt_label": "Intervenor-Defendant"
+    },
+    "Intervenor Plaintiff": {
+        "label": "Intervenor Plaintiff",
+        "alt_label": "Intervenor-Plaintiff"
+    },
+    "Joint Debtor": {
+        "label": "Joint Debtor"
+    },
+    "Judge": {
+        "label": "Judge"
+    },
+    "Liquidator": {
+        "label": "Liquidator"
+    },
+    "Material Witness": {
+        "label": "Material Witness"
+    },
+    "Mediator": {
+        "label": "Mediator"
+    },
+    "Miscellaneous Party": {
+        "label": "Miscellaneous Party"
+    },
+    "Movant": {
+        "label": "Movant"
+    },
+    "Non-Filing Spouse": {
+        "label": "Non-Filing Spouse",
+        "alt_label": "NF Spouse"
+    },
+    "Objector": {
+        "label": "Objector"
+    },
+    "Other Professional": {
+        "label": "Other Professional",
+        "alt_label": "Professional"
+    },
+    "Partner": {
+        "label": "Partner"
+    },
+    "Petitioner": {
+        "label": "Petitioner"
+    },
+    "Petitioning Creditor": {
+        "label": "Petitioning Creditor"
+    },
+    "Plaintiff": {
+        "label": "Plaintiff"
+    },
+    "Realtor": {
+        "label": "Realtor"
+    },
+    "Receiver": {
+        "label": "Receiver"
+    },
+    "Respondent": {
+        "label": "Respondent"
+    },
+    "Special Counsel": {
+        "label": "Special Counsel"
+    },
+    "Special Master": {
+        "label": "Special Master"
+    },
+    "Stockholder": {
+        "label": "Stockholder"
+    },
+    "Successor Trustee": {
+        "label": "Successor Trustee"
+    },
+    "Surveyor": {
+        "label": "Surveyor"
+    },
+    "Taxpayer": {
+        "label": "Taxpayer"
+    },
+    "Third Party Defendant": {
+        "label": "Third Party Defendant",
+        "alt_label": "3rd Pty Defendant"
+    },
+    "Third Party Plaintiff": {
+        "label": "Third Party Plaintiff",
+        "alt_label": "3rd Party Plaintiff"
+    },
+    "Trustee": {
+        "label": "Trustee"
+    },
+    "U.S. Trustee": {
+        "label": "U.S. Trustee",
+        "alt_label": "US Trustee"
+    },
+    "Witness ": {
+        "label": "Witness "
+    },
+    "Consolidated Third Party Defendant": {
+        "label": "Consolidated Third Party Defendant",
+        "alt_label": "Consol Third Party Defendant"
+    },
+    "Fourth Party Defendant": {
+        "label": "Fourth Party Defendant",
+        "alt_label": "4th Pty Defendant"
+    },
+    "Fourth Party Plaintiff": {
+        "label": "Fourth Party Plaintiff",
+        "alt_label": "4th Party Plaintiff"
+    },
+    "Interested Non-Party": {
+        "label": "Interested Non-Party"
+    },
+    "Notice Party": {
+        "label": "Notice Party",
+        "alt_label": "Notice Only Party"
+    },
+    "Garnishee": {
+        "label": "Garnishee"
+    },
+    "Movant": {
+        "label": "Movant"
+    },
+    "Unknown": {
+        "label": "unknown"
+    },
+    "Surety": {
+        "label": "Surety"
+    },
+    "Interpreter": {
+        "label": "Interpreter"
+    },
+    "Estate Plaintiff": {
+        "label": "Estate Plaintiff"
+    },
+    "Estate Defendant": {
+        "label": "Estate Defendant"
+    },
+    "Relief Defendant": {
+        "label": "Relief Defendant"
+    },
+    "Executor Defendant": {
+        "label": "Executor Defendant"
+    },
+    "Estate of": {
+        "label": "Estate of"
+    },
+    "Mediation Assistance Program Counsel": {
+        "label": "Mediation Assistance Program Counsel"
+    },
+    "Recruited Counsel": {
+        "label": "Recruited Counsel"
+    },
+    "Relator": {
+        "label": "Relator"
+    }
+}

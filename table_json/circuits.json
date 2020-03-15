@@ -1,0 +1,95 @@
+{
+    "rows": [
+        {
+            "circuit": "District of Columbia Circuit",
+            "full_name": "United States Court of Appeals for the District of Columbia Circuit",
+            "abbreviation": "D.C. Cir.",
+            "city": "Washington",
+            "state": "DC"
+        },
+        {
+            "circuit": "First Circuit",
+            "full_name": "United States Court of Appeals for the First Circuit",
+            "abbreviation": "1st Cir.",
+            "city": "Boston",
+            "state": "MA"
+        },
+        {
+            "circuit": "Second Circuit",
+            "full_name": "United States Court of Appeals for the Second Circuit",
+            "abbreviation": "2d Cir.",
+            "city": "New York City",
+            "state": "NY"
+        },
+        {
+            "circuit": "Third Circuit",
+            "full_name": "United States Court of Appeals for the Third Circuit",
+            "abbreviation": "3d Cir.",
+            "city": "Philadelphia",
+            "state": "NY"
+        },
+        {
+            "circuit": "Fourth Circuit",
+            "full_name": "United States Court of Appeals for the Fourth Circuit",
+            "abbreviation": "4th Cir.",
+            "city": "Richmond",
+            "state": "VA"
+        },
+        {
+            "circuit": "Fifth Circuit",
+            "full_name": "United States Court of Appeals for the Fifth Circuit",
+            "abbreviation": "5th Cir.",
+            "city": "New Orleans",
+            "state": "LA"
+        },
+        {
+            "circuit": "Sixth Circuit",
+            "full_name": "United States Court of Appeals for the Sixth Circuit",
+            "abbreviation": "6th Cir.",
+            "city": "Cincinnati",
+            "state": "OH"
+        },
+        {
+            "circuit": "Seventh Circuit",
+            "full_name": "United States Court of Appeals for the Seventh Circuit",
+            "abbreviation": "7th Cir.",
+            "city": "Chicago",
+            "state": "IL"
+        },
+        {
+            "circuit": "Eighth Circuit",
+            "full_name": "United States Court of Appeals for the Eighth Circuit",
+            "abbreviation": "8th Cir.",
+            "city": "St. Louis",
+            "state": "MO"
+        },
+        {
+            "circuit": "Ninth Circuit",
+            "full_name": "United States Court of Appeals for the Ninth Circuit",
+            "abbreviation": "9th Cir.",
+            "city": "San Francisco",
+            "state": "CA"
+        },
+        {
+            "circuit": "Tenth Circuit",
+            "full_name": "United States Court of Appeals for the Tenth Circuit",
+            "abbreviation": "10th Cir.",
+            "city": "Denver",
+            "state": "CO"
+        },
+        {
+            "circuit": "Eleventh Circuit",
+            "full_name": "United States Court of Appeals for the Eleventh Circuit",
+            "abbreviation": "11th Cir.",
+            "city": "Atlanta",
+            "state": "GA"
+        },
+        {
+            "circuit": "Federal Circuit",
+            "full_name": "United States Court of Appeals for the Federal Circuit",
+            "abbreviation": "Fed. Cir.",
+            "city": "Washington",
+            "state": "DC"
+        }
+    ]
+}

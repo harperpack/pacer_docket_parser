@@ -17,8 +17,8 @@ import sys
 import random
 
 class CorpusParser:
-    
-    def __init__(self, docket_dir, o_dir="./parsed_dockets/", threads=8):
+
+    def __init__(self, docket_dir, o_dir="./parsed_dockets/test/", threads=8):
         self.docket_directory = docket_dir
         self.output_directory = o_dir
         self.process_count = threads
@@ -27,7 +27,7 @@ class CorpusParser:
         self.docket_count = 0
         self.parse_count = 0
         self.main()
-    
+
     def build_docket_queue(self):
         if os.path.isfile(self.docket_directory):
             self.docket_queue.append(self.docket_directory)
@@ -38,21 +38,25 @@ class CorpusParser:
                     if filename.endswith('.html'):
                         self.docket_queue.append(os.path.join(dirpath, filename))
                         self.docket_count += 1
-    
+
+    def populate_roles(self):
+        with open("./table_json/roles.json", "r", encoding="utf-8") as f:
+            self.roles = json.load(f)
+
     def parse_docket(self, docket):
-        new_parse = DocketParser(docket)
+        new_parse = DocketParser(docket,self.roles)
         if "FAILURE" not in new_parse.parsed_docket:
             case_id = new_parse.case_id + "_0" + str(random.randint(1,99999))
             parsed_docket = {case_id: new_parse.parsed_docket}
             return parsed_docket
-    
+
     def output_to_local_dir(self):
         Path(self.output_directory).mkdir(parents=True, exist_ok=True)
         self.filename = self.output_directory + str(self.parse_count) + \
                         "_dockets_" + str(date.today().strftime("%Y%m%d")) + ".json"
         with open(self.filename, 'w', encoding='utf-8') as f:
             json.dump(self.parsed_dockets, f, ensure_ascii=False, indent=4)
-    
+
     def main(self):
         try:
             start_queue = time.time()
@@ -60,6 +64,7 @@ class CorpusParser:
             if not self.docket_queue:
                 print("Could not find .html files to parse. :(")
             else:
+                self.populate_roles()
                 queue_time = round(time.time() - start_queue,2)
                 print("Successfully queued {c} dockets in {t} seconds.".format(c=self.docket_count,t=queue_time))
                 p = Pool(processes=self.process_count)
@@ -75,12 +80,13 @@ class CorpusParser:
                 print("\nAnd when the parser saw the breadth of its outputs, it wept for there were no more files to parse.")
         except Exception as e:
             print('Now is the winter of our discontent: parsing failed with exception "{f}"'.format(f=e))
-                
-    
+
+
 class DocketParser:
-    
-    def __init__(self, docket):
+
+    def __init__(self, docket, role_parameters):
         self.docket = docket
+        self.role_parameters = role_parameters
         self.parsed_docket = {"docket_flags":'',
                               "case_id":'',
                               "docket_case_id":'',
@@ -105,15 +111,18 @@ class DocketParser:
                               "counter defendant":{},
                               "cross claimant":{},
                               "cross defendant":{},
+                              "thirdparty plaintiff":{},
+                              "thirdparty defendant":{},
+                              "URL_path":str(self.docket),
                               "missed_parses":[],
                               }
         self.case_id = docket[docket.rfind(str(os.path.sep))+1:].partition('.html')[0]
         self.miss_list = []
         self.roles = ['Defendant','Plaintiff','Petitioner','Respondent',
-                      'Appellee','Appellant','Trustee','Creditor', 
+                      'Appellee','Appellant','Trustee','Creditor',
                       'Material Witness', 'Interested Party', 'Counter Claimant',
                       'Miscellaneous Party','Counter Defendant','Cross Claimant',
-                      'Cross Defendant',
+                      'Cross Defendant','ThirdParty Plaintiff','ThirdParty Defendant',
                       ]
         self.other_known_underlines = ['Pending Counts','Disposition','Q','R',
                                        'Highest Offense Level (Opening)','U',
@@ -121,13 +130,13 @@ class DocketParser:
                                        'Highest Offense Level (Terminated)',
                                        'Highest Offense Level']
         self.main()
-    
+
     def open_docket(self):
         with open(self.docket, "rb") as f:
             docket_html = f.read()
         self.soup = BeautifulSoup(docket_html, 'html.parser')
         self.parsed_docket["case_id"] = self.case_id
-    
+
     def parse_initial_charge_headers(self, html_str, role, key):
         first_header_val = ''
         second_header = ''
@@ -154,7 +163,7 @@ class DocketParser:
             self.update_addl_field_list([first_header, soup.get_text()], first_header, [first_header_val], '', role, key)
             first_header = ''
         return first_header, second_header, remaining
-    
+
     def parse_charges(self, html_str, role, key):
         one_h, two_h, remaining = self.parse_initial_charge_headers(html_str, role, key)
         one_h_lines = ['']
@@ -239,14 +248,14 @@ class DocketParser:
             self.update_addl_field_list(one_h_lines, one_h, one_h_val, '', role, key)
         if two_h:
             self.update_addl_field_list(two_h_lines, two_h, two_h_val, '', role, key)
-    
+
     def parse_docket_header(self):
         for header in ['h1', 'h2', 'h3', 'h4', 'h5', 'h6']:
             docket_title = ' '.join([header_element.get_text() for header_element in self.soup.find_all(header)])
             if docket_title:
                 break
         self.parsed_docket["docket_title"] += docket_title
-    
+
     def parse_header(self, text, pertains_to_entire_docket=False, key=None):
         if not pertains_to_entire_docket:
             self.parsed_docket["docket_header"] += text
@@ -257,13 +266,13 @@ class DocketParser:
                     continue
                 t = pertains_to_entire_docket + str(key) + " |*| " + t + '\n'
                 self.parsed_docket["role_header"] += t
-                
+
     def parse_docket_text(self, table, table_text):
         self.parsed_docket["docket_text"] = {"rows":[]}
         first = True
-        for row in table.find_all('tr'):
+        for ordinal_number, row in enumerate(table.find_all('tr')):
 #            full_row = {"date":'',"number":'',"links":'',"text":''}
-            full_row = {"date":'',"number":'',"links":{},"text":''}
+            full_row = {"date":'',"number":'',"ordinal_number":'',"links":{},"text":''}
             for column in row.find_all('td'):
                 if first:
                     full_row["text"] = row.get_text()
@@ -280,11 +289,12 @@ class DocketParser:
             the_links = [[str(a['href']),a.get_text()] for a in row.find_all('a') if a.has_attr('href')]
             for link in the_links:
                 full_row["links"][link[0]] = link[1]
+            full_row["ordinal_number"] = ordinal_number
             self.parsed_docket["docket_text"]["rows"].append(full_row)
-            
+
     def parse_docket_footers(self, table):
         table_text = table.get_text()
-        if "agistrate" not in table_text and ' ' not in table_text: 
+        if "agistrate" not in table_text and ' ' not in table_text:
             self.parsed_docket["docket_flags"] += table_text.replace("\n","")
         elif "Docket Text" in table_text:
             self.parse_docket_text(table, table_text)
@@ -295,7 +305,7 @@ class DocketParser:
         else:
             self.parse_header(table_text)
 #            self.parsed_docket["missed_parses"].append(table.get_text())
-    
+
     def parse_sub_role(self, blob, tags, role, key, subkey, sub2key=None, sub3key=None):
         if blob.get_text():
             tags_sought = []
@@ -317,7 +327,7 @@ class DocketParser:
                 self.parsed_docket[role][key][subkey][sub2key] = sub_blob
             else:
                 self.parsed_docket[role][key][subkey] = sub_blob
-    
+
     def parse_reps(self, role, key, rep_blob, rep_key=0):
         estimated_reps = rep_blob.find_all('b')
         if estimated_reps:
@@ -341,7 +351,7 @@ class DocketParser:
                     self.parse_sub_role(current_rep_blob, ['b','strong'], role, key, "reps", rep_key, "name_attempt")
                     rep_blob = BeautifulSoup(next_rep + remaining_blob, 'html.parser')
                     rep_key += 1
-    
+
     def parse_role(self, table, split, role):
         table_as_str = str(table)
         role_dict = {"blob":'',
@@ -407,12 +417,21 @@ class DocketParser:
                         role_blob = BeautifulSoup(role_section, 'html.parser')
                         self.parse_role(role_blob, underline, underline.get_text().strip().lower())
                         table = BeautifulSoup(next_underline + remainder, 'html.parser')
-    
+
     def clean_underline(self, underline):
         return ' '.join([line for line in underline.get_text().strip().split() if "(" not in line])
-    
+
     def update_role_list(self):
-        searchable_area = self.soup.get_text().partition("Docket Text")[0]
+        for underline in self.role_parameters.keys():
+            if underline in self.other_known_underlines:
+                continue
+            elif underline in self.roles:
+                continue
+            else:
+                # print('Hey! Listen! File {c} contains a role not yet seen: "{r}"'.format(c=self.case_id, r=underline,))
+                self.roles.append(underline)
+                self.parsed_docket[underline.lower()] = {}
+        searchable_area = str(self.soup).partition("Docket Text")[0]
         searchable_soup = BeautifulSoup(searchable_area, 'html.parser')
         for underline in searchable_soup.find_all('u'):
             underline = self.clean_underline(underline)
@@ -425,7 +444,7 @@ class DocketParser:
                 self.roles.append(underline)
                 self.parsed_docket[underline.lower()] = {}
 
-            
+
     def parse_docket(self):
         docket_tables = self.soup.find_all('table')
         if not docket_tables:
@@ -444,7 +463,7 @@ class DocketParser:
                         self.parse_docket_text(table, table_text)
                     else:
                         self.parse_roles(table, table_topic, roles)
-    
+
     def update_addl_field_list(self, line, name, value, loc="Header", key="addl_docket_fields", rolekey=None):
         if key == "addl_docket_fields":
             check = {#"line":line,
@@ -465,7 +484,7 @@ class DocketParser:
                                             "field_value_attempt":field_value})
         else:
             self.parsed_docket["missed_parses"].append(line)
-    
+
     def refine_header_parsing(self):
         title = self.parsed_docket.pop("docket_title").split('\n')
         title += self.parsed_docket.pop("docket_header").split('\n')
@@ -550,13 +569,13 @@ class DocketParser:
             else:
                 location, separator, line_value = line.partition(" |*| ")
                 self.update_addl_field_list(line_value, "unsure", '', location)
-    
+
     def clean_number(self, number, merge=''):
         to_remove = ['(',')','-',',','_','.','#']
         for element in to_remove:
             number = number.replace(element, ' ')
         return merge.join(number.strip().split())
-    
+
     def overload_fields(self, existing, new):
         if not existing:
             return new
@@ -564,7 +583,7 @@ class DocketParser:
             return existing + [new]
         else:
             return [existing, new]
-    
+
     def parse_contact_blob(self, role, key, num, non_reps=False, formatted=None):
         other_fields = []
         unsure = 0
@@ -601,14 +620,14 @@ class DocketParser:
                         'Square','Lane','Ln','Crescent','Alley','Bvd','Court',
                         'Expressway','Freeway','Jct','Parkway', 'North', 'South',
                         'East', 'West', 'Nw', 'Sw','Pier',]
-        second_address = ['Suite','Ste.','Floor','Room',]
+        second_address = ['Suite','Ste.','Floor','Room','Unit','Apt ','Apt.','Apartment']
         building_words = ['Tower','Center','Building','Courthouse','Complex',
                           'Prison','Jail','Penitentiary','Facility','USP','College',
                           'University','Institute','Institution','Supermax']
-        states = ["AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DC", "DE", 
-                           "FL", "GA","HI", "ID", "IL", "IN", "IA", "KS", "KY", 
+        states = ["AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DC", "DE",
+                           "FL", "GA","HI", "ID", "IL", "IN", "IA", "KS", "KY",
                            "LA", "ME", "MD","MA", "MI", "MN", "MS", "MO", "MT",
-                           "NE", "NV", "NH", "NJ","NM", "NY", "NC", "ND", "OH", 
+                           "NE", "NV", "NH", "NJ","NM", "NY", "NC", "ND", "OH",
                            "OK", "OR", "PA", "RI", "SC","SD", "TN", "TX", "UT",
                            "VT", "VA", "WA", "WV", "WI", "WY"]
         title_words = ["Chief","Warden","Principal","Attorney","Deputy","Judge",
@@ -744,7 +763,7 @@ class DocketParser:
                 self.parsed_docket[role][key]["other_fields"] += other_fields
             else:
                 self.parsed_docket[role][key]["other_fields"] = other_fields
-    
+
     def refine_role_blobs(self, role, key, name):
         addl_fields = []
         lines = self.parsed_docket[role][key].pop("blob")
@@ -803,13 +822,13 @@ class DocketParser:
         self.parsed_docket[role][key]["reps"].pop("total_blob")
         for num in self.parsed_docket[role][key]["reps"].keys():
             self.parse_contact_blob(role, key, num)
-    
+
     def refine_blob_parsing(self):
         for role in self.roles:
             if self.parsed_docket[role.lower()]:
                 for num in self.parsed_docket[role.lower()].keys():
                     self.refine_role_blobs(role.lower(), num, self.parsed_docket[role.lower()][num]["name_attempt"])
-                    
+
     def main(self):
         try:
             self.open_docket()

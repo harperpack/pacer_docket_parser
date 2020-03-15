@@ -1,0 +1,517 @@
+{
+    "110": {
+        "code": "110",
+        "label": "Insurance",
+        "category": "Contract"
+    },
+    "120": {
+        "code": "120",
+        "label": "Marine",
+        "category": "Contract"
+    },
+    "130": {
+        "code": "130",
+        "label": "Miller Act",
+        "category": "Contract"
+    },
+    "140": {
+        "code": "140",
+        "label": "Negotiable Instrument",
+        "category": "Contract"
+    },
+    "150": {
+        "code": "150",
+        "label": "Recovery of Overpayment & Enforcement of Judgment",
+        "category": "Contract"
+    },
+    "151": {
+        "code": "151",
+        "label": "Medicare Act",
+        "category": "Contract"
+    },
+    "152": {
+        "code": "152",
+        "label": "Recovery of Defaulted Student Loans (Excl. Veterans)",
+        "category": "Contract"
+    },
+    "153": {
+        "code": "153",
+        "label": "Recovery of Overpayment of Veteran’s Benefits",
+        "category": "Contract"
+    },
+    "160": {
+        "code": "160",
+        "label": "Stockholders’ Suits",
+        "category": "Contract"
+    },
+    "190": {
+        "code": "190",
+        "label": "Other Contract",
+        "category": "Contract"
+    },
+    "195": {
+        "code": "195",
+        "label": "Contract Product Liability",
+        "category": "Contract"
+    },
+    "196": {
+        "code": "196",
+        "label": "Franchise",
+        "category": "Contract"
+    },
+    "210": {
+        "code": "210",
+        "label": "Land Condemnation",
+        "category": "Real Property"
+    },
+    "220": {
+        "code": "220",
+        "label": "Foreclosure",
+        "category": "Real Property"
+    },
+    "230": {
+        "code": "230",
+        "label": "Rent Lease & Ejectment",
+        "category": "Real Property"
+    },
+    "240": {
+        "code": "240",
+        "label": "Torts to Land",
+        "category": "Real Property"
+    },
+    "245": {
+        "code": "245",
+        "label": "Tort Product Liability",
+        "category": "Real Property"
+    },
+    "290": {
+        "code": "290",
+        "label": "All Other Real Property",
+        "category": "Real Property"
+    },
+    "310": {
+        "code": "310",
+        "label": "Airplane",
+        "category": "Torts - Personal Injury"
+    },
+    "315": {
+        "code": "315",
+        "label": "Airplane Product Liability",
+        "category": "Torts - Personal Injury"
+    },
+    "320": {
+        "code": "320",
+        "label": "Assault",
+        "category": "Torts - Personal Injury"
+    },
+    "330": {
+        "code": "330",
+        "label": "Federal Employers’ Liability",
+        "category": "Torts - Personal Injury"
+    },
+    "340": {
+        "code": "340",
+        "label": "Marine",
+        "category": "Torts - Personal Injury"
+    },
+    "345": {
+        "code": "345",
+        "label": "Marine Product Liability",
+        "category": "Torts - Personal Injury"
+    },
+    "350": {
+        "code": "350",
+        "label": "Motor Vehicle",
+        "category": "Torts - Personal Injury"
+    },
+    "355": {
+        "code": "355",
+        "label": "Motor Vehicle Product Liability",
+        "category": "Torts - Personal Injury"
+    },
+    "360": {
+        "code": "360",
+        "label": "Other Personal Injury",
+        "category": "Torts - Personal Injury"
+    },
+    "362": {
+        "code": "362",
+        "label": "Personal Injury- Medical Malpractice",
+        "category": "Torts - Personal Injury"
+    },
+    "365": {
+        "code": "365",
+        "label": "Personal Injury- Product Liability",
+        "category": "Torts - Personal Injury"
+    },
+    "367": {
+        "code": "367",
+        "label": "Personal Injury - Health Care/Pharmaceutical Personal Injury/Product Liability",
+        "category": "Torts - Personal Injury"
+    },
+    "368": {
+        "code": "368",
+        "label": "Asbestos Personal Injury Product Liability",
+        "category": "Torts - Personal Injury"
+    },
+    "375": {
+        "code": "375",
+        "label": "False Claims Act",
+        "category": "Torts - Personal Injury"
+    },
+    "376": {
+        "code": "376",
+        "label": "Qui Tam (31 U.S.C. § 3729(a))",
+        "category": "Torts - Personal Injury"
+    },
+    "370": {
+        "code": "370",
+        "label": "Other Fraud",
+        "category": "Torts - Personal Property"
+    },
+    "371": {
+        "code": "371",
+        "label": "Truth in Lending",
+        "category": "Torts - Personal Property"
+    },
+    "380": {
+        "code": "380",
+        "label": "Other Personal Property Damage",
+        "category": "Torts - Personal Property"
+    },
+    "385": {
+        "code": "385",
+        "label": "Property Damage Product Liability",
+        "category": "Torts - Personal Property"
+    },
+    "422": {
+        "code": "422",
+        "label": "Appeal 28 USC 158",
+        "category": "Bankruptcy"
+    },
+    "423": {
+        "code": "423",
+        "label": "Withdrawal 28 USC 157",
+        "category": "Bankruptcy"
+    },
+    "440": {
+        "code": "440",
+        "label": "Other Civil Rights",
+        "category": "Civil Rights"
+    },
+    "441": {
+        "code": "441",
+        "label": "Voting",
+        "category": "Civil Rights"
+    },
+    "442": {
+        "code": "442",
+        "label": "Employment",
+        "category": "Civil Rights"
+    },
+    "443": {
+        "code": "443",
+        "label": "Housing/Accommodations",
+        "category": "Civil Rights"
+    },
+    "444": {
+        "code": "444",
+        "label": "Welfare",
+        "category": "Civil Rights"
+    },
+    "445": {
+        "code": "445",
+        "label": "Amer w/Disabilities-Employment",
+        "category": "Civil Rights"
+    },
+    "446": {
+        "code": "446",
+        "label": "Amer w/Disabilities - Other",
+        "category": "Civil Rights"
+    },
+    "448": {
+        "code": "448",
+        "label": "Education",
+        "category": "Civil Rights"
+    },
+    "462": {
+        "code": "462",
+        "label": "Naturalization Application",
+        "category": "Immigration"
+    },
+    "463": {
+        "code": "463",
+        "label": "Habeas Corpus - Alien Detainee",
+        "category": "Immigration"
+    },
+    "465": {
+        "code": "465",
+        "label": "Other Immigration Actions",
+        "category": "Immigration"
+    },
+    "510": {
+        "code": "510",
+        "label": "Motions to Vacate Sentence",
+        "category": "Prisoner Petitions"
+    },
+    "530": {
+        "code": "530",
+        "label": "General",
+        "category": "Prisoner Petitions - Habeas Corpus"
+    },
+    "535": {
+        "code": "535",
+        "label": "Death Penalty",
+        "category": "Prisoner Petitions - Habeas Corpus"
+    },
+    "540": {
+        "code": "540",
+        "label": "Mandamus & Other",
+        "category": "Prisoner Petitions - Habeas Corpus"
+    },
+    "550": {
+        "code": "550",
+        "label": "Civil Rights",
+        "category": "Prisoner Petitions - Habeas Corpus"
+    },
+    "555": {
+        "code": "555",
+        "label": "Prison Condition",
+        "category": "Prisoner Petitions - Habeas Corpus"
+    },
+    "560": {
+        "code": "560",
+        "label": "Conditions of Confinement",
+        "category": "Prisoner Petitions - Civil Detainee"
+    },
+    "610": {
+        "code": "610",
+        "label": "Agriculture",
+        "category": "Forfeiture/Penalty"
+    },
+    "620": {
+        "code": "620",
+        "label": "Other Food & Drug",
+        "category": "Forfeiture/Penalty"
+    },
+    "625": {
+        "code": "625",
+        "label": "Drug Related Seizure of Property 21 USC 881",
+        "category": "Forfeiture/Penalty"
+    },
+    "630": {
+        "code": "630",
+        "label": "Liquor Laws",
+        "category": "Forfeiture/Penalty"
+    },
+    "640": {
+        "code": "640",
+        "label": "RR & Truck",
+        "category": "Forfeiture/Penalty"
+    },
+    "650": {
+        "code": "650",
+        "label": "Airline Regulations",
+        "category": "Forfeiture/Penalty"
+    },
+    "660": {
+        "code": "660",
+        "label": "Occupational Safety/Health",
+        "category": "Forfeiture/Penalty"
+    },
+    "690": {
+        "code": "690",
+        "label": "Other",
+        "category": "Forfeiture/Penalty"
+    },
+    "710": {
+        "code": "710",
+        "label": "Fair Labor Standards Act",
+        "category": "Labor"
+    },
+    "720": {
+        "code": "720",
+        "label": "Labor/Management Relations",
+        "category": "Labor"
+    },
+    "730": {
+        "code": "730",
+        "label": "Labor/Management Reporting & Disclosure Act",
+        "category": "Labor"
+    },
+    "740": {
+        "code": "740",
+        "label": "Railway Labor Act",
+        "category": "Labor"
+    },
+    "751": {
+        "code": "751",
+        "label": "Family and Medical Leave Act",
+        "category": "Labor"
+    },
+    "790": {
+        "code": "790",
+        "label": "Other Labor Litigation",
+        "category": "Labor"
+    },
+    "791": {
+        "code": "791",
+        "label": "Employee Retirement Income Security Act",
+        "category": "Labor"
+    },
+    "820": {
+        "code": "820",
+        "label": "Copyrights",
+        "category": "Property Rights"
+    },
+    "830": {
+        "code": "830",
+        "label": "Patent",
+        "category": "Property Rights"
+    },
+    "840": {
+        "code": "840",
+        "label": "Trademark",
+        "category": "Property Rights"
+    },
+    "861": {
+        "code": "861",
+        "label": "HIA (1395ff)",
+        "category": "Social Security"
+    },
+    "862": {
+        "code": "862",
+        "label": "Black Lung (923)",
+        "category": "Social Security"
+    },
+    "863": {
+        "code": "863",
+        "label": "DIWC/DIWW (405(g))",
+        "category": "Social Security"
+    },
+    "864": {
+        "code": "864",
+        "label": "SSID Title XVI",
+        "category": "Social Security"
+    },
+    "865": {
+        "code": "865",
+        "label": "RSI (405(g))",
+        "category": "Social Security"
+    },
+    "870": {
+        "code": "870",
+        "label": "Taxes (U.S. Plaintiff or Defendant)",
+        "category": "Federal Tax Suits"
+    },
+    "871": {
+        "code": "871",
+        "label": "IRS-Third Party 26 USC 7609",
+        "category": "Federal Tax Suits"
+    },
+    "400": {
+        "code": "400",
+        "label": "State Reapportionment",
+        "category": "Other Statutes"
+    },
+    "410": {
+        "code": "410",
+        "label": "Antitrust",
+        "category": "Other Statutes"
+    },
+    "430": {
+        "code": "430",
+        "label": "Banks and Banking",
+        "category": "Other Statutes"
+    },
+    "450": {
+        "code": "450",
+        "label": "Commerce",
+        "category": "Other Statutes"
+    },
+    "460": {
+        "code": "460",
+        "label": "Deportation",
+        "category": "Other Statutes"
+    },
+    "470": {
+        "code": "470",
+        "label": "Racketeer Influenced and Corrupt Organizations",
+        "category": "Other Statutes"
+    },
+    "480": {
+        "code": "480",
+        "label": "Consumer Credit",
+        "category": "Other Statutes"
+    },
+    "490": {
+        "code": "490",
+        "label": "Cable/Sat TV",
+        "category": "Other Statutes"
+    },
+    "810": {
+        "code": "810",
+        "label": "Selective Service",
+        "category": "Other Statutes"
+    },
+    "850": {
+        "code": "850",
+        "label": "Securities/Commodities/Exchange",
+        "category": "Other Statutes"
+    },
+    "875": {
+        "code": "875",
+        "label": "Customer Challenge 12 USC 34101",
+        "category": "Other Statutes"
+    },
+    "890": {
+        "code": "890",
+        "label": "Other Statutory Actions",
+        "category": "Other Statutes"
+    },
+    "891": {
+        "code": "891",
+        "label": "Agricultural Acts",
+        "category": "Other Statutes"
+    },
+    "892": {
+        "code": "892",
+        "label": "Economic Stabilization Act",
+        "category": "Other Statutes"
+    },
+    "893": {
+        "code": "893",
+        "label": "Environmental Matters",
+        "category": "Other Statutes"
+    },
+    "894": {
+        "code": "894",
+        "label": "Energy Allocation Act",
+        "category": "Other Statutes"
+    },
+    "895": {
+        "code": "895",
+        "label": "Freedom of Information Act",
+        "category": "Other Statutes"
+    },
+    "896": {
+        "code": "896",
+        "label": "Arbitration",
+        "category": "Other Statutes"
+    },
+    "899": {
+        "code": "899",
+        "label": "Administrative Procedure Act/Review or Appeal of Agency Decision",
+        "category": "Other Statutes"
+    },
+    "900": {
+        "code": "900",
+        "label": "Appeal of Fee Determination Under Equal Access to Justice Act",
+        "category": "Other Statutes"
+    },
+    "950": {
+        "code": "950",
+        "label": "Constitutionality of State Statutes",
+        "category": "Other Statutes"
+    }
+}
