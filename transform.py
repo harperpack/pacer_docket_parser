@@ -1,10 +1,6 @@
 # TO DO:
-## figure out pipeline -> just go case by case
-## add recusal parser from Adam -> working on
-## add waiver parser from Adam -> working on
-## add time to tag into schema?
-## add the html into parser
-## add the parse into json
+## add recusal parser
+## add waiver parser
 
 ## CHARGE DEFICIENCIES:
 ### not catching prison without prison words ("dft sentenced" example)
@@ -18,17 +14,29 @@
 ## PERSISTENT FAILURES
 ## 4-16-cr-00278-GRS
 ##
-##
-### ADD DOCKET HTML URL TO PARSER, PARSING LINK BIT TO PARSE2DB
+
+## some details:
+### - initial parser should bark if issues, but may throw a lot into "unsure":
+##### > will miss unexpected (anywhere outside of docket entries) hyperlinks
+##### > will parse poorly on dockets without:
+######## >> a structured header,
+######## >> a body with parties and optionally reps and optionally charges, where
+######## >>     parties have maybe a line beneath  names, reps have address blobs,
+######## >>     and charges have dispositions, and
+######## >> a structured footer (i.e., docket entries table)
+### - secondary parser is also imperfect:
+##### > charge parsing is imperfect
+##### > judges not de-duped; may be info e.g., assigned_to only mentioned once then lost in later deduping
+##### > judges may be duped in highly-similar fashion (e.g., Murray Chun, Murray L Chun, etc.)
+##### > attorney addresses can be listed as "ADDRESS EXISTS ALREADY" or something
+##### > skips any attorney or party listed as 'Court Use Only' or 'Internal Use Only' or 'Service List' or 'Probation Department' or 'Pretrial Services'
+##### > title/capacity parsing can leak information, but the assumption is that
+##### >     this is immaterial unless the docket is poorly parsed (see above)
+##### >     TODO re: failing dockets with too many potential title candidates (> 3?)
+
 ### REMOVE PRINTS, NO_FIND_ RETURN VALS
 ### CAPTURING SEALED AND UNSEALED AS SEPARATE MOTIONS, SEPARATELY
-### not capturing hyperlinks in member cases or lead cases
 
-## write the db input for general tables, test it
-## write the db input for specific code, ask AP
-## CONFIRM skipping 'Court Use Only' and 'Internal Use Only' and 'Service List'
-## ASK about skipping 'Probation Department', 'Pretrial Services'
-#
 ## questionable:
 ### address normalization
 ### org disambiguation
@@ -41,64 +49,130 @@ import os.path
 from pathlib import Path
 import spacy
 import statistics
+from fuzzywuzzy import fuzz
+from bs4 import BeautifulSoup
+import traceback
+import sys
 
 class DocketTables:
 
-    def __init__(self, in_dir='', out_dir="", batch_size=0):
-        self.in_dir = in_dir if in_dir else "./parsed_dockets/test/"
+    def __init__(self, in_dir='./parsed_dockets/pipeline', state=''):   #, out_dir="", batch_size=0):
+        self.in_dir = in_dir #if in_dir else "./parsed_dockets/test/"
         # self.out_dir = out_dir if out_dir else "./db_ready_json/test_"
-        self.out_dir = in_dir.replace('.json','_PARSED.json')
+        # self.out_dir = in_dir.replace('pipeline','noacri_dockets')
         self.docket_tables = {}
-        self.shared_tables = {"misses":{},"charges":{}}
+        self.failure_tables = {}
+        self.shared_tables = {"misses":{"failures":[],}}
         self.case_ids = []
         self.miss_count = []
-        self.batch_size = batch_size
+        # self.batch_size = batch_size
+        self.json_queue = []
+        self.total = 0
+        self.default_state = state
         self.main()
 
-    def load_json(self):
-        with open(self.in_dir, "r") as f:
+    def build_json_queue(self):
+        if os.path.isfile(self.in_dir):
+            self.json_queue.append(self.in_dir)
+        elif os.path.isdir(self.in_dir):
+            for (dirpath, dirnames, filenames) in os.walk(self.in_dir):
+                for filename in filenames:
+                    if filename.endswith('.json'):
+                        full_filename = str(os.path.join(dirpath, filename))
+                        if 'parselist' not in full_filename:
+                            # if "4-16-cv-01373-DDN" not in full_filename:# and "2-16-cv-04191-MDH" not in full_filename and "4-16-cv-00480-BP" not in full_filename and "4-16-cr-00427-HEA" not in full_filename:
+                            #     continue
+                            self.json_queue.append(os.path.join(dirpath, filename))
+
+    def load_json(self, json_file):
+        with open(json_file, "r") as f:
             self.parsed = json.load(f)
 
-    def output_json(self):
-        # filename = self.out_dir + "/" + self.case_ids[0] + ".json"
-        filename = self.out_dir
-        # print(filename)
-        # print(self.docket_tables)
-        try:
-            if not self.batch_size:
-                with open(filename, "w", encoding="utf-8") as f:
-                    json.dump(self.docket_tables, f, ensure_ascii=False, indent=4)
-                if self.shared_tables["misses"]:
-                    filename_miss = filename.replace(".json","__MISS.json")
-                    with open(filename_miss, "w", encoding="utf-8") as f:
-                        json.dump(self.shared_tables["misses"], f, ensure_ascii=False, indent=4)
-            else:
-                label = self.batch_local_path+str(os.path.sep)+"PARSE_"+str(self.length)+"_of_"+str(self.length)+".json"
-                with open(label, "w", encoding="utf-8") as f:
-                    json.dump(self.docket_tables, f, ensure_ascii=False, indent=4)
-                if self.shared_tables["misses"]:
-                    filename_miss = self.batch_local_path+str(os.path.sep)+"final__MISS.json"
-                    with open(filename_miss, "w", encoding="utf-8") as f:
-                        json.dump(self.shared_tables["misses"], f, ensure_ascii=False, indent=4)
-            if self.shared_tables["cities"]:
-                filename_city = "./table_json/cities.json"
-                with open(filename_city, "w", encoding="utf-8") as f:
-                    json.dump(self.shared_tables["cities"], f, ensure_ascii=False, indent=4)
-            if self.shared_tables["charges"]:
-                filename_charge = "./table_json/charges.json"
-                with open(filename_charge, "w", encoding="utf-8") as f:
-                    json.dump(self.shared_tables["charges"], f, ensure_ascii=False, indent=4)
-        except:
-            print("FAILURE TO OUTPUT JSON")
+    def progress(self, count, length):
+        # drawn from https://stackoverflow.com/questions/3173320/text-progress-bar-in-the-console/27871113
+        length -= 1
+        width = 60
+        if length > 0:
+            completion = float(count / length)
+        else:
+            completion = float(1)
+        filled = int(width * completion)
+        prog = round(100 * completion,1)
+        prog = str(prog) + "%" + ' ' * (5 - len(str(prog)))
+        progress_bar = '█' * filled + '-' * (width - filled)
+        big = width * ' '
+        sys.stdout.write('\r|{b}| {p} \t{f}\r'.format(b=progress_bar,p=prog, f=big))
+        sys.stdout.flush()
 
-    def batch_save(self, shard):
-        try:
-            label = self.batch_local_path+str(os.path.sep)+"PARSE_"+str(shard)+"_of_"+str(self.length)+".json"
-            with open(label, "w", encoding="utf-8") as f:
-                json.dump(self.docket_tables, f, ensure_ascii=False, indent=4)
-            self.docket_tables = {}
-        except:
-            print("FAILURE TO OUTPUT JSON")
+    def save_latest(self, filename):
+        filename_success = filename.replace('pipeline','noacri_dockets').replace('.json','_PARSED.json')
+        with open(filename_success, "w", encoding="utf-8") as f:
+            json.dump(self.docket_tables, f, ensure_ascii=False, indent=4)
+        filename_failure = filename.replace('pipeline','failures').replace('.json','_FAILURE.json')
+        with open(filename_failure, "w", encoding="utf-8") as f:
+            json.dump(self.failure_tables, f, ensure_ascii=False, indent=4)
+
+    def save_docket(self, filename, save_type, save_table):
+        if save_type == "success":
+            filename = filename.replace('pipeline','noacri_dockets').replace('.json','_PARSED.json')
+        else:
+            filename = filename.replace('pipeline','failures').replace('.json','_FAILURE.json')
+        with open(filename, "w", encoding="utf-8") as f:
+            json.dump(save_table, f, ensure_ascii=False, indent=4)
+
+    def save_final(self):
+        miss_filename = self.in_dir.replace('pipeline','failures') + str(os.path.sep) + "__finalMISS.json"
+        with open(miss_filename, "w", encoding="utf-8") as f:
+            json.dump(self.shared_tables["misses"], f, ensure_ascii=False, indent=4)
+        if self.shared_tables["cities"]:
+            filename_city = "./table_json/cities.json"
+            with open(filename_city, "w", encoding="utf-8") as f:
+                json.dump(self.shared_tables["cities"], f, ensure_ascii=False, indent=4)
+        if self.shared_tables["charges"]:
+            filename_charge = "./table_json/charges.json"
+            with open(filename_charge, "w", encoding="utf-8") as f:
+                json.dump(self.shared_tables["charges"], f, ensure_ascii=False, indent=4)
+
+    # def output_json(self):
+    #     # filename = self.out_dir + "/" + self.case_ids[0] + ".json"
+    #     filename = self.out_dir
+    #     # print(filename)
+    #     # print(self.docket_tables)
+    #     try:
+    #         if not self.batch_size:
+    #             with open(filename, "w", encoding="utf-8") as f:
+    #                 json.dump(self.docket_tables, f, ensure_ascii=False, indent=4)
+    #             if self.shared_tables["misses"]:
+    #                 filename_miss = filename.replace(".json","__MISS.json")
+    #                 with open(filename_miss, "w", encoding="utf-8") as f:
+    #                     json.dump(self.shared_tables["misses"], f, ensure_ascii=False, indent=4)
+    #         else:
+    #             label = self.batch_local_path+str(os.path.sep)+"PARSE_"+str(self.length)+"_of_"+str(self.length)+".json"
+    #             with open(label, "w", encoding="utf-8") as f:
+    #                 json.dump(self.docket_tables, f, ensure_ascii=False, indent=4)
+    #             if self.shared_tables["misses"]:
+    #                 filename_miss = self.batch_local_path+str(os.path.sep)+"final__MISS.json"
+    #                 with open(filename_miss, "w", encoding="utf-8") as f:
+    #                     json.dump(self.shared_tables["misses"], f, ensure_ascii=False, indent=4)
+    #         if self.shared_tables["cities"]:
+    #             filename_city = "./table_json/cities.json"
+    #             with open(filename_city, "w", encoding="utf-8") as f:
+    #                 json.dump(self.shared_tables["cities"], f, ensure_ascii=False, indent=4)
+    #         if self.shared_tables["charges"]:
+    #             filename_charge = "./table_json/charges.json"
+    #             with open(filename_charge, "w", encoding="utf-8") as f:
+    #                 json.dump(self.shared_tables["charges"], f, ensure_ascii=False, indent=4)
+    #     except:
+    #         print("FAILURE TO OUTPUT JSON")
+
+    # def batch_save(self, shard):
+    #     try:
+    #         label = self.batch_local_path+str(os.path.sep)+"PARSE_"+str(shard)+"_of_"+str(self.length)+".json"
+    #         with open(label, "w", encoding="utf-8") as f:
+    #             json.dump(self.docket_tables, f, ensure_ascii=False, indent=4)
+    #         self.docket_tables = {}
+    #     except:
+    #         print("FAILURE TO OUTPUT JSON")
 
     def populate_nos(self):
         with open("./table_json/nos.json", "r", encoding="utf-8") as f:
@@ -147,7 +221,7 @@ class DocketTables:
                 self.shared_tables["cities"][combined] = {"city":court["city"],"state":court["state"]}
 
     def load(self):
-        self.prep_batching()
+        # self.prep_batching()
         self.populate_roles()
         self.populate_nos()
         self.populate_circuit()
@@ -157,71 +231,154 @@ class DocketTables:
         self.populate_cities()
         # self.build_cities()
 
-    def prep_batching(self):
-        in_filename = self.in_dir[self.in_dir.rfind(str(os.path.sep)):]
-        in_dir_base = self.in_dir.replace(in_filename,'')
-        self.batch_home_path = in_dir_base + str(os.path.sep) + 'batch'
-        # self.batch_home_path = str(os.getcwd()) + str(os.path.sep) + 'batch'
-        # self.batch_home_path = './batch/'
-        Path(self.batch_home_path).mkdir(parents=True, exist_ok=True)
-        self.batch_local_path = self.batch_home_path + str(os.path.sep) + in_filename[1:].replace('.json','')
-        Path(self.batch_local_path).mkdir(parents=True, exist_ok=True)
+    # def prep_batching(self):
+    #     in_filename = self.in_dir[self.in_dir.rfind(str(os.path.sep)):]
+    #     in_dir_base = self.in_dir.replace(in_filename,'')
+    #     self.batch_home_path = in_dir_base + str(os.path.sep) + 'batch'
+    #     # self.batch_home_path = str(os.getcwd()) + str(os.path.sep) + 'batch'
+    #     # self.batch_home_path = './batch/'
+    #     Path(self.batch_home_path).mkdir(parents=True, exist_ok=True)
+    #     self.batch_local_path = self.batch_home_path + str(os.path.sep) + in_filename[1:].replace('.json','')
+    #     Path(self.batch_local_path).mkdir(parents=True, exist_ok=True)
         # if not os.path.exists(self.batch_local_path):
         #     os.makedirs(self.batch_local_path)
 
+    def ensure_output_dirs(self):
+        failure_dir = self.in_dir.replace('pipeline','failures')
+        success_dir = self.in_dir.replace('pipeline','noacri_dockets')
+        for dir_to_make in [failure_dir,success_dir]:
+            if not os.path.exists(dir_to_make):
+                os.makedirs(dir_to_make)
+
     def main(self):
         start = time.time()
-        self.load_json()
         self.load()
         nlp = spacy.load("en_core_web_sm")
-        self.length = len(self.parsed.keys())
+        self.build_json_queue()
         load_time = round(time.time() - start,2)
-        print("Successfully loaded {c} dockets in {t} seconds.".format(c=self.length,t=load_time))
-        start_parse = time.time()
-        for count, case in enumerate(self.parsed,start=1):
-            self.case_ids.append(case)
-            docket = DocketTable(case,self.parsed[case],self.shared_tables,nlp,self.in_dir)
-            self.shared_tables["cities"] = docket.cities
-            self.shared_tables["des"] = docket.des
-            self.shared_tables["charges"] = docket.charges
-            self.docket_tables[str(count)] = docket.tables
-            add_misses = False
-            if docket.missed_parses:
-                for miss in docket.missed_parses:
-                    if miss:
-                        add_misses = True
-                        break
-            if add_misses:
-                self.shared_tables["misses"][case] = docket.missed_parses
-                self.miss_count.append(docket.miss_count)
-            if count == self.length:
-                mn = 0
-                md = 0
-                if self.miss_count:
-                    mn = round(statistics.mean(self.miss_count),2)
-                    md = round(statistics.median(self.miss_count),2)
-                done_time = round(time.time() - start_parse,2)
-                print("\n----------")
-                print("Completed parsing.")
-                print("{c} docket JSONs in {t} seconds.".format(c=count,t=done_time))
-                print("Final statistics:\t{t}s/docket\t{m}misses/docket\tmedian: {d}\tmean: {n}".format(t=round(done_time/count,2),m=round(sum(self.miss_count)/count,2),d=md,n=mn))
-            elif count % 300 == 0:
-                print("...{c} docket JSONs parsed.".format(c=count))
-                latest_time = round(time.time() - start_parse,2)
-                mn = 0
-                md = 0
-                if self.miss_count:
-                    mn = round(statistics.mean(self.miss_count),2)
-                    md = round(statistics.median(self.miss_count),2)
-                print("--->\t{t}s/docket\t{m}misses/docket\tmedian: {d}\tmean: {n}".format(t=round(latest_time/count,2),m=round(sum(self.miss_count)/count,2),d=md,n=mn))
-                if self.batch_size:
-                    # print("Batch size motherfucker")
-                    self.batch_save(count)
-        self.output_json()
+        length = len(self.json_queue)
+        print("Successfully loaded {c} JSONs in {t} seconds.".format(c=len(self.json_queue),t=load_time))
+        self.ensure_output_dirs()
+        before_parse = time.time()
+        try:
+            for json_count, json_file in enumerate(self.json_queue,start=1):
+                start_parse = time.time()
+                try:
+                    self.load_json(json_file)
+                    local_misses = []
+                    for case_count, case in enumerate(self.parsed,start=1):
+                        docket = DocketTable(case,self.parsed[case],self.shared_tables,nlp,self.in_dir,self.default_state)
+                        self.shared_tables["cities"] = docket.cities
+                        self.shared_tables["des"] = docket.des
+                        self.shared_tables["charges"] = docket.charges
+                        add_misses = False
+                        if docket.missed_parses:
+                            for miss in docket.missed_parses:
+                                if miss:
+                                    add_misses = True
+                                    break
+                        save_table = {}
+                        save_type = "success"
+                        if add_misses:
+                            self.shared_tables["misses"][case] = docket.missed_parses
+                            local_misses.append(docket.miss_count)
+                            #self.failure_tables[str(case_count)] = docket.tables
+                            save_table["d"] = docket.tables
+                            save_table["moises"] = docket.missed_parses
+                            save_type = "failure"
+                        else:
+                            save_table = docket.tables
+                        self.save_docket(json_file, save_type, save_table)
+                        self.total += 1
+                    mn = 0
+                    md = 0
+                    if local_misses:
+                        mn = round(statistics.mean(local_misses),2)
+                        md = round(statistics.median(local_misses),2)
+                        self.miss_count += local_misses
+                    # self.save_latest(json_file)
+                    latest_time = round(time.time() - start_parse,2)
+                    #print("Finished {f} of {c} files:\n-->\t{q} misses\t{t}dckt/s\t{m}miss/dckt\tmedian: {d}\tmean: {n}\n".format(q=len(local_misses),f=json_count,c=len(self.json_queue),t=round(case_count/latest_time,2),m=round(sum(local_misses)/case_count,2),d=md,n=mn))
+                except Exception as e:
+                    print('...parsing of {j} failed with exception "{f}"\n'.format(j=json_file[json_file.rfind('/')+1:],f=e))
+                    traceback.print_exc()
+                    self.shared_tables["misses"]["failures"].append(json_file)
+                self.progress(json_count, length)
+        except Exception as e:
+            print('...\n...entire operation failed with exception "{f}"'.format(f=e))
+        self.save_final()
+        mn = ' na '
+        md = ' na '
+        if self.miss_count:
+            mn = round(statistics.mean(self.miss_count),2)
+            md = round(statistics.median(self.miss_count),2)
+        done_time = round(time.time() - before_parse,2)
+        rate = 0
+        incidence = ' na '
+        if self.total:
+            rate = round(self.total/done_time,2)
+            incidence = round(sum(self.miss_count)/self.total,2)
+        print("\n----------")
+        print("Completed parsing.")
+        try:
+            print("{c} dockets, {q} misses, {j} JSONs in {t} seconds.".format(c=self.total,q=len(self.miss_count),j=json_count,t=done_time))
+            print("Final statistics:\t{t}dckt/s\t{m}miss/dckt\tmedian: {d}\tmean: {n}".format(t=rate,m=incidence,d=md,n=mn))
+        except Exception as e:
+            print('...\n...printing, too, fails: "{f}"'.format(f=e))
+
+    # def old_main(self):
+    #     start = time.time()
+    #     self.load_json()
+    #     self.load()
+    #     nlp = spacy.load("en_core_web_sm")
+    #     self.length = len(self.parsed.keys())
+    #     load_time = round(time.time() - start,2)
+    #     print("Successfully loaded {c} dockets in {t} seconds.".format(c=self.length,t=load_time))
+    #     start_parse = time.time()
+    #     for count, case in enumerate(self.parsed,start=1):
+    #         self.case_ids.append(case)
+    #         docket = DocketTable(case,self.parsed[case],self.shared_tables,nlp,self.in_dir)
+    #         self.shared_tables["cities"] = docket.cities
+    #         self.shared_tables["des"] = docket.des
+    #         self.shared_tables["charges"] = docket.charges
+    #         self.docket_tables[str(count)] = docket.tables
+    #         add_misses = False
+    #         if docket.missed_parses:
+    #             for miss in docket.missed_parses:
+    #                 if miss:
+    #                     add_misses = True
+    #                     break
+    #         if add_misses:
+    #             self.shared_tables["misses"][case] = docket.missed_parses
+    #             self.miss_count.append(docket.miss_count)
+    #         if count == self.length:
+    #             mn = 0
+    #             md = 0
+    #             if self.miss_count:
+    #                 mn = round(statistics.mean(self.miss_count),2)
+    #                 md = round(statistics.median(self.miss_count),2)
+    #             done_time = round(time.time() - start_parse,2)
+    #             print("\n----------")
+    #             print("Completed parsing.")
+    #             print("{c} docket JSONs in {t} seconds.".format(c=count,t=done_time))
+    #             print("Final statistics:\t{t}s/docket\t{m}misses/docket\tmedian: {d}\tmean: {n}".format(t=round(done_time/count,2),m=round(sum(self.miss_count)/count,2),d=md,n=mn))
+    #         elif count % 300 == 0:
+    #             print("...{c} docket JSONs parsed.".format(c=count))
+    #             latest_time = round(time.time() - start_parse,2)
+    #             mn = 0
+    #             md = 0
+    #             if self.miss_count:
+    #                 mn = round(statistics.mean(self.miss_count),2)
+    #                 md = round(statistics.median(self.miss_count),2)
+    #             print("--->\t{t}s/docket\t{m}misses/docket\tmedian: {d}\tmean: {n}".format(t=round(latest_time/count,2),m=round(sum(self.miss_count)/count,2),d=md,n=mn))
+    #             if self.batch_size:
+    #                 # print("Batch")
+    #                 self.batch_save(count)
+    #     self.output_json()
 
 class DocketTable:
 
-    def __init__(self, case_id, parsed_case, shared_tables, nlp, in_dir):
+    def __init__(self, case_id, parsed_case, shared_tables, nlp, in_dir, default_state=''):
         self.case_id = case_id
         self.parsed = parsed_case
         self.new_case_id = self.case_id[:self.case_id.rfind('_')] + "|||" + self.case_id_val()
@@ -237,11 +394,9 @@ class DocketTable:
         self.charges = shared_tables["charges"]
         self.tables = { # listed in fill order
         # NO FOREIGN KEYS, NO RELATIONSHIPS
-        # "Statutes":{}, # no fkey
-        # "Offenses":{}, # no fkey
-        # "DispositionTypes":{}, # no fkey
+        # "Charges":{}, # no fkey
+        # "Designations":{}, # no fkey
         # "Roles":{}, # no fkey
-        # "Designation":{}, # no fkey
         # ASSEMBLED VIA SCRAPE
         # "Cities":{}, # no fkey
         # "CircuitCourt":{}, # fkey to Cities; REL to Case, Cities, DistrictCourt,
@@ -329,7 +484,43 @@ class DocketTable:
         self.miss_count = 0
         self.nlp = nlp
         self.in_dir = in_dir
+        self.tried_city = False
+        self.default_state = default_state
+        self.write = False
         self.main()
+
+    def set_default_state(self):
+        counts = {}
+        for dist in self.dist:
+            state = ''
+            for name, abbreviation in self.state_abbrevs.items():
+                if abbreviation.lower() == dist["state"].lower():
+                    state = name
+            index = self.tables["DocketHTML"]["html"].lower().find(dist["district"].lower())
+            if index == -1:
+                continue
+            counts[(state,dist["district"])] = index
+        dist_most = [sys.maxsize,'']
+        for state_tuple, index in counts.items():
+            if index < dist_most[0]:
+                dist_most = [index, state_tuple]
+        if dist_most:
+            if 'New York' not in dist_most[1][0]:
+                print(self.case_id)
+            # print(dist_most)
+            self.default_state = dist_most[1][0]
+            return dist_most[1][1]
+        counts = {}
+        for state in self.state_abbrevs.keys():
+            if self.default_state and self.default_state.lower().strip() == state.lower():
+                return state
+            counts[state] = self.tables["DocketHTML"]["html"].lower().count(state.lower())
+        most = [0,'']
+        for state, count in counts.items():
+            if count >= most[0]:
+                most = [count, state]
+        self.default_state = most[1]
+        return ''
 
     def case_id_val(self):
         try:
@@ -344,7 +535,7 @@ class DocketTable:
         elif state.title() in self.state_abbrevs.keys():
             return self.state_abbrevs[state]
         elif state.split()[0].title() in self.state_abbrevs.keys():
-            return self.state_abbrevs[state.split()[0]]
+            return self.state_abbrevs[state.split()[0].title()]
         elif state.strip() == 'DC':
             return 'DC'
         elif str("New " + state) in self.state_abbrevs.keys():
@@ -363,18 +554,135 @@ class DocketTable:
                             return self.state_abbrevs[str(tokens[i]+' '+tokens[i+1]).title().strip()]
         return "??"
 
+    def review_misses(self):
+        to_be_removed = []
+        docket_flags = False
+        case_name = False
+        if "docket_flags" in self.tables["Case"].keys():
+            docket_flags = True
+        if "case_name" in self.tables["Case"].keys():
+            case_name = True
+        for obj in self.missed_parses:
+            if obj == "NO_FIND_MATCH_CITY_02 Northern District of Texas,  NV" or obj == "NO_FIND_MATCH_CITY_01 Northern District of Texas,  NV":
+                to_be_removed.append(obj)
+                continue
+            if isinstance(obj, str):
+                if "CASE_TITLE_DUPLICATES_" in obj:
+                    if self.tables["Case"].get("case_name"):
+                        if obj.replace("CASE_TITLE_DUPLICATES_",'') in self.tables["Case"].get("case_name"):
+                            to_be_removed.append(obj)
+                            continue
+                elif "NO_FIND_MATCH_CITY" in obj:
+                    if self.tried_city:
+                        continue
+                    # elif ":" in obj:
+                    #     location = obj.rfind(":")
+                    #     if location >= 0:
+                    #         other_case = obj.rpartition(',')[0][location-1:]
+                    #         if 'magistrate' in obj.lower():
+                    #             self.add_other_case_no("magistrate",other_case)
+                    #         else:
+                    #             self.add_other_case_no("",other_case)
+                    #         to_be_removed.append(obj)
+                    #         continue
+                    elif obj[-2:].isupper():
+                        city, comma, state = obj.rpartition('(')[2].partition(',')
+                        city, state = self.match_cities(city, state)
+                        self.add_col("Case","city_id",city)
+                        self.add_col("Case","state_id",state)
+                        to_be_removed.append(obj)
+                        self.tried_city = True
+                        continue
+                continue
+            elif not obj:
+                to_be_removed.append(obj)
+                continue
+            else:
+                try:
+                    value = obj["field_value_attempt"]
+                    if not value:
+                        to_be_removed.append(obj)
+                        continue
+                    elif value == "Live Database":
+                        to_be_removed.append(obj)
+                        continue
+                    if value.strip().replace('-','').isnumeric():
+                        to_be_removed.append(obj)
+                        self.add_other_case_no('case in other court',value)
+                        continue
+                    elif '-' in value and value.split(',')[0].replace('-','').strip().isnumeric():
+                        to_be_removed.append(obj)
+                        for case_no in value.split(','):
+                            self.add_other_case_no('case in other court',case_no)
+                        continue
+                    add_flag = False
+                    if value.isupper():
+                        add_flag = True
+                    elif sum([1 if x.isupper() else 0 for x in value.split(',')]) > 0:
+                        add_flag = True
+                    if add_flag:
+                        if not docket_flags:
+                            self.add_col("Case","docket_flags",value)
+                        else:
+                            self.tables["Case"]["docket_flags"] += ',' + value
+                        to_be_removed.append(obj)
+                        continue
+                    if '(' in value and ')' in value and 'district' in value.lower():
+                        if self.tables["Case"].get("city_id") != None:
+                            continue
+                        to_be_removed.append(obj)
+                        if self.tables["Case"].get("district_id") != None and self.tables["Case"].get("city_id") != None:
+                            continue
+                        city = value.rpartition('(')[2].rpartition(')')[0]
+                        try:
+                            state = value.partition(''.join(['(',city,')']))[0].split()[-1]
+                        except:
+                            state = self.default_state
+                        city, state = self.match_cities(city, state)
+                        self.add_col("Case","city_id",city)
+                        self.add_col("Case","state_id",state)
+                        if "district_id" not in self.tables["Case"].keys():
+                            print("Somehow no district here...")
+                    if not add_flag and not case_name:
+                        to_be_removed.append(obj)
+                        self.add_col("Case","case_name",value)
+                        continue
+                    if "-cv-" in value.lower() or "-cr-" in value.lower():
+                        self.add_other_case_no('case in other court',value)
+                        to_be_removed.append(obj)
+                        continue
+                    if "district of" in value.lower() and "no_find" not in value.lower() and self.tables["Case"].get("district_id") == None:
+                        #district_id = self.match_court(value, '', self.default_state, "district")
+                        self.add_col("Case","district_id",value)
+                        to_be_removed.append(obj)
+                    continue
+                except:
+                    continue
+        for obj in to_be_removed:
+            try:
+                self.missed_parses.remove(obj)
+            except:
+                continue
+
     def report_misses(self):
         report = False
+        review = False
         for miss in self.missed_parses:
             if miss:
-                report = True
+                review = True
                 break
-        if report and self.missed_parses:
-            self.miss_count = len(self.missed_parses)
-            # print("{c} has {n} missed parses!".format(c=self.new_case_id,n=len(self.missed_parses)))
-            # filename = "./missed_"+self.new_case_id+".json"
-            # with open(filename, "w", encoding="utf-8") as f:
-            #     json.dump(self.missed_parses, f, ensure_ascii=False, indent=4)
+        if review:
+            self.review_misses()
+            for miss in self.missed_parses:
+                if miss:
+                    report = True
+                    break
+            if report and self.missed_parses:
+                self.miss_count = len(self.missed_parses)
+                # print("{c} has {n} missed parses!".format(c=self.new_case_id,n=len(self.missed_parses)))
+                # filename = "./missed_"+self.new_case_id+".json"
+                # with open(filename, "w", encoding="utf-8") as f:
+                #     json.dump(self.missed_parses, f, ensure_ascii=False, indent=4)
 
     def add_col(self, table, label, value):
         self.tables[table][label] = value
@@ -455,206 +763,209 @@ class DocketTable:
         return  ' '.join(sorted(strng.lower().split()))
 
     def clean_district(self, court):
-        singles = ['DC','MA','ME','MN','NH','PR','RI','DE','VT','VI','NJ','MD',
-                    'SC','NE','ND','SD','AK','AZ','GU','HI','ID','MT','NV','MP',
-                    'CO','KS','OR','NM','UT','WY',]
-        if not court:
-            return court
-        court = court.lower()
-        district_words = ['Eastern','Southern','Western','Middle','Northern',
-                        'Central',]
-        st = ''
-        dw = ''
-        for state in self.state_abbrevs.keys():
-            if state.lower() in court:
-                st = state
-        if not st:
+        try:
+            singles = ['DC','MA','ME','MN','NH','PR','RI','DE','VT','VI','NJ','MD',
+                        'SC','NE','ND','SD','AK','AZ','GU','HI','ID','MT','NV','MP',
+                        'CO','KS','OR','NM','UT','WY',]
+            if not court:
+                return court
+            court = court.lower()
+            district_words = ['Eastern','Southern','Western','Middle','Northern',
+                            'Central',]
+            st = ''
+            dw = ''
             for state in self.state_abbrevs.keys():
-                if self.state_abbrevs[state] in court:
+                if state.lower() in court:
                     st = state
-        for word in district_words:
-            if word.lower() in court:
-                dw = word
-                if st:
-                    if 'Islands' in st:
-                        st += 'the '
-                    return dw + ' District of ' + st
-        if st:
-            if self.state_abbrevs[st] in singles:
-                return 'District of ' + st
-        for word in ['district of','dist. of','dist of']:
-            if word in court:
-                pre_w, throwaway, post_w = court.partition(word)
-                pre_h = [x.strip() for x in pre_w.split()]
-                pre = pre_h[-1]
-                post_h = [x.strip() for x in post_w.split()]
-                post = post_h[0]
-                if pre[0] == 'c':
-                    pre = 'Central '
-                elif pre[0] == 'e':
-                    pre = 'Eastern '
-                elif pre[0] == 'm':
-                    pre = 'Middle '
-                elif pre[0] == 'n':
-                    pre = 'Northern '
-                elif pre[0] == 's':
-                    pre = 'Southern '
-                elif pre[0] == 'w':
-                    pre = 'Western '
-                else:
-                    pre = ''
-                if post[0] == 'a':
-                    if 'b' in post and 'm' in post:
-                        post = 'Alabama'
-                    elif 'z' in post and 'o' in post:
-                        post = 'Arizona'
-                    elif 'l' in post and 'k' in post:
-                        post = 'Alaska'
-                    elif 'k' in post and 'n' in post:
-                        post = 'Arkansas'
-                elif post[0] == 'c':
-                    if 'f' in post and 'r' in post:
-                        post = 'California'
-                    elif 'd' in post and 'a' in post:
-                        post = 'Colorado'
-                    elif 'm' in post and 'b' in post:
-                        post = 'Columbia'
-                    elif 't' in post and 'i' in post:
-                        post = 'Connecticut'
-                elif post[0] == 'd':
-                    if 'w' in post and 'r' in post:
-                        post = 'Delaware'
-                    elif 'c' in post:
-                        post = 'Connecticut'
-                elif post[0] == 'f':
-                    if 'l' in post and 'a' in post:
-                        post = 'Florida'
-                elif post[0] == 'g':
-                    if 'u' in post and 'm' in post:
-                        post = 'Guam'
-                    elif 'e' in post and 'i' in post:
-                        post = 'Georgia'
-                elif post[0] == 'h':
-                    if 'w' in post and 'i' in post:
-                        post = 'Hawaii'
-                elif post[0] == 'i':
-                    if 'l' in post and 'n' in post:
-                        post = 'Illinois'
-                    elif 'w' in post and 'a' in post:
-                        post = 'Iowa'
-                    elif 'd' in post and 'h' in post:
-                        post = 'Idaho'
-                elif post[0] == 'k':
-                    if 'n' in post and 's' in post:
-                        post = 'Kansas'
-                    elif 'y' in post and 'c' in post:
-                        post = 'Kentucky'
-                elif post[0] == 'l':
-                    if 'o' in post and 'u' in post:
-                        post = 'Louisiana'
-                elif post[0] == 'm':
-                    if 'e' in post and 's' in post and 'o' in post and 'i' in post:
-                        post = 'Minnesota'
-                    elif 'y' in post and 'l' in post and 'd' in post:
-                        post = 'Maryland'
-                    elif 'h' in post and 'i' in post and 'g' in post:
-                        post = 'Michigan'
-                    elif 't' in post and 'h' in post and 'u' in post:
-                        post = 'Massachusetts'
-                    elif 'o' in post and 'i' in post and 'r' in post:
-                        post = 'Missouri'
-                    elif 'p' in post and 'i' in post and 's' in post:
-                        post = 'Mississippi'
-                    elif 'e' in post and 'i' in post and 'n' in post:
-                        post = 'Maine'
-                    elif 't' in post and 'n' in post and 'a' in post:
-                        post = 'Montana'
-                elif post[0] == 'n':
-                    if 'e' in post and 'w' in post:
-                        if len(post_h) > 1:
-                            post_2 = post_h[1]
-                            if 'h' in post_2 and 'p' in post_2:
-                                post = "New Hampshire"
-                            elif 'm' in post and 'x' in post:
-                                post = 'New Mexico'
-                            elif 'j' in post and 'r' in post:
-                                post = 'New Jersey'
-                            elif 'y' in post and 'k' in post:
-                                post = 'New York'
-                    elif 'v' in post and 'a' in post and 'd' in post:
-                        post = 'Nevada'
-                    elif 'b' in post and 'k' in post and 's' in post:
-                        post = 'Nebraska'
-                    elif ('t' in post and 'h' in post) or 'n.' in post:
-                        if len(post_h) > 1:
-                            post_2 = post_h[1]
-                            if 'd' in post_2 and 'k' in post_2:
-                                post = "North Dakota"
-                            elif 'c' in post and 'l' in post:
-                                post = 'North Carolina'
-                            elif 'm' in post and 'r' in post:
-                                post = 'Northern Mariana Islands'
-                elif post[0] == 'o':
-                    if 'k' in post and 'h' in post and 'm' in post:
-                        post = 'Oklahoma'
-                    elif 'h' in post and 'i' in post:
-                        post = 'Ohio'
-                    elif 'r' in post and 'g' in post and 'e' in post:
-                        post = 'Oregon'
-                elif post[0] == 'p':
-                    if 'a' in post and 'u' in post and 'l' in post:
-                        post = 'Palau'
-                    elif 'u' in post and 'o' in post and 'c' in post:
-                        post = 'Puerto Rico'
-                    elif 'e' in post and 'n' in post:
-                        post = 'Pennsylvania'
-                elif post[0] == 'r':
-                    if 'h' in post and 'd' in post and 'e' in post:
-                        post = 'Rhode Island'
-                elif post[0] == 's':
-                    if ('u' in post and 'o' in post) or 's.' in post:
-                        if len(post_h) > 1:
-                            post_2 = post_h[1]
-                            if 'c' in post_2 and 'r' in post_2:
-                                post = 'South Carolina'
-                            elif 'k' in post_2 and 't' in post_2:
-                                post = 'South Dakota'
-                elif post[0] == 't':
-                    if 'x' in post and 'a' in post:
-                        post = 'Texas'
-                    elif 'n' in post and 's' in post:
-                        post = 'Tennessee'
-                elif post[0] == 'u':
-                    if 't' in post and 'h' in post:
-                        post = 'Utah'
-                elif post[0] == 'v':
-                    if 't' in post and 'm' in post:
-                        post = 'Vermont'
-                    elif 'g' in post and 'i' in post:
-                        if len(post_h) > 1:
-                            if 'd' in post_h[1] and 's' in post_h[1] and 'i' in post_h[1]:
-                                post = "Virgin Islands"
-                        if not post and 'g' in post and 'n' in post:
-                            post = 'Virginia'
-                elif post[0] == 'w':
-                    if 't' in post and 'g' in post and 'h' in post:
-                        post = 'Washington'
-                    elif 's' in post and 'c' in post and 'n' in post:
-                        post = 'Wisconsin'
-                    elif 'y' in post and 'm' in post and 'o' in post:
-                        post = 'Wyoming'
-                    elif ('e' in post and 's' in post and 't' in post) or 'w.' in post:
-                        post = 'West Virginia'
-                else:
-                    post = ''
-                if post:
-                    if pre:
-                        return pre + 'District of ' + post
-                    return 'District of ' + post
-        report_string = "NO_FIND_DISTRICT_{c}".format(c=court)
-        # print(report_string)
-        self.missed_parses.append(report_string)
-        return court
+            if not st:
+                for state in self.state_abbrevs.keys():
+                    if self.state_abbrevs[state] in court:
+                        st = state
+            for word in district_words:
+                if word.lower() in court:
+                    dw = word
+                    if st:
+                        if 'Islands' in st:
+                            st += 'the '
+                        return dw + ' District of ' + st
+            if st:
+                if self.state_abbrevs[st] in singles:
+                    return 'District of ' + st
+            for word in ['district of','dist. of','dist of']:
+                if word in court:
+                    pre_w, throwaway, post_w = court.partition(word)
+                    pre_h = [x.strip() for x in pre_w.split()]
+                    pre = pre_h[-1]
+                    post_h = [x.strip() for x in post_w.split()]
+                    post = post_h[0]
+                    if pre[0] == 'c':
+                        pre = 'Central '
+                    elif pre[0] == 'e':
+                        pre = 'Eastern '
+                    elif pre[0] == 'm':
+                        pre = 'Middle '
+                    elif pre[0] == 'n':
+                        pre = 'Northern '
+                    elif pre[0] == 's':
+                        pre = 'Southern '
+                    elif pre[0] == 'w':
+                        pre = 'Western '
+                    else:
+                        pre = ''
+                    if post[0] == 'a':
+                        if 'b' in post and 'm' in post:
+                            post = 'Alabama'
+                        elif 'z' in post and 'o' in post:
+                            post = 'Arizona'
+                        elif 'l' in post and 'k' in post:
+                            post = 'Alaska'
+                        elif 'k' in post and 'n' in post:
+                            post = 'Arkansas'
+                    elif post[0] == 'c':
+                        if 'f' in post and 'r' in post:
+                            post = 'California'
+                        elif 'd' in post and 'a' in post:
+                            post = 'Colorado'
+                        elif 'm' in post and 'b' in post:
+                            post = 'Columbia'
+                        elif 't' in post and 'i' in post:
+                            post = 'Connecticut'
+                    elif post[0] == 'd':
+                        if 'w' in post and 'r' in post:
+                            post = 'Delaware'
+                        elif 'c' in post:
+                            post = 'Connecticut'
+                    elif post[0] == 'f':
+                        if 'l' in post and 'a' in post:
+                            post = 'Florida'
+                    elif post[0] == 'g':
+                        if 'u' in post and 'm' in post:
+                            post = 'Guam'
+                        elif 'e' in post and 'i' in post:
+                            post = 'Georgia'
+                    elif post[0] == 'h':
+                        if 'w' in post and 'i' in post:
+                            post = 'Hawaii'
+                    elif post[0] == 'i':
+                        if 'l' in post and 'n' in post:
+                            post = 'Illinois'
+                        elif 'w' in post and 'a' in post:
+                            post = 'Iowa'
+                        elif 'd' in post and 'h' in post:
+                            post = 'Idaho'
+                    elif post[0] == 'k':
+                        if 'n' in post and 's' in post:
+                            post = 'Kansas'
+                        elif 'y' in post and 'c' in post:
+                            post = 'Kentucky'
+                    elif post[0] == 'l':
+                        if 'o' in post and 'u' in post:
+                            post = 'Louisiana'
+                    elif post[0] == 'm':
+                        if 'e' in post and 's' in post and 'o' in post and 'i' in post:
+                            post = 'Minnesota'
+                        elif 'y' in post and 'l' in post and 'd' in post:
+                            post = 'Maryland'
+                        elif 'h' in post and 'i' in post and 'g' in post:
+                            post = 'Michigan'
+                        elif 't' in post and 'h' in post and 'u' in post:
+                            post = 'Massachusetts'
+                        elif 'o' in post and 'i' in post and 'r' in post:
+                            post = 'Missouri'
+                        elif 'p' in post and 'i' in post and 's' in post:
+                            post = 'Mississippi'
+                        elif 'e' in post and 'i' in post and 'n' in post:
+                            post = 'Maine'
+                        elif 't' in post and 'n' in post and 'a' in post:
+                            post = 'Montana'
+                    elif post[0] == 'n':
+                        if 'e' in post and 'w' in post:
+                            if len(post_h) > 1:
+                                post_2 = post_h[1]
+                                if 'h' in post_2 and 'p' in post_2:
+                                    post = "New Hampshire"
+                                elif 'm' in post and 'x' in post:
+                                    post = 'New Mexico'
+                                elif 'j' in post and 'r' in post:
+                                    post = 'New Jersey'
+                                elif 'y' in post and 'k' in post:
+                                    post = 'New York'
+                        elif 'v' in post and 'a' in post and 'd' in post:
+                            post = 'Nevada'
+                        elif 'b' in post and 'k' in post and 's' in post:
+                            post = 'Nebraska'
+                        elif ('t' in post and 'h' in post) or 'n.' in post:
+                            if len(post_h) > 1:
+                                post_2 = post_h[1]
+                                if 'd' in post_2 and 'k' in post_2:
+                                    post = "North Dakota"
+                                elif 'c' in post and 'l' in post:
+                                    post = 'North Carolina'
+                                elif 'm' in post and 'r' in post:
+                                    post = 'Northern Mariana Islands'
+                    elif post[0] == 'o':
+                        if 'k' in post and 'h' in post and 'm' in post:
+                            post = 'Oklahoma'
+                        elif 'h' in post and 'i' in post:
+                            post = 'Ohio'
+                        elif 'r' in post and 'g' in post and 'e' in post:
+                            post = 'Oregon'
+                    elif post[0] == 'p':
+                        if 'a' in post and 'u' in post and 'l' in post:
+                            post = 'Palau'
+                        elif 'u' in post and 'o' in post and 'c' in post:
+                            post = 'Puerto Rico'
+                        elif 'e' in post and 'n' in post:
+                            post = 'Pennsylvania'
+                    elif post[0] == 'r':
+                        if 'h' in post and 'd' in post and 'e' in post:
+                            post = 'Rhode Island'
+                    elif post[0] == 's':
+                        if ('u' in post and 'o' in post) or 's.' in post:
+                            if len(post_h) > 1:
+                                post_2 = post_h[1]
+                                if 'c' in post_2 and 'r' in post_2:
+                                    post = 'South Carolina'
+                                elif 'k' in post_2 and 't' in post_2:
+                                    post = 'South Dakota'
+                    elif post[0] == 't':
+                        if 'x' in post and 'a' in post:
+                            post = 'Texas'
+                        elif 'n' in post and 's' in post:
+                            post = 'Tennessee'
+                    elif post[0] == 'u':
+                        if 't' in post and 'h' in post:
+                            post = 'Utah'
+                    elif post[0] == 'v':
+                        if 't' in post and 'm' in post:
+                            post = 'Vermont'
+                        elif 'g' in post and 'i' in post:
+                            if len(post_h) > 1:
+                                if 'd' in post_h[1] and 's' in post_h[1] and 'i' in post_h[1]:
+                                    post = "Virgin Islands"
+                            if not post and 'g' in post and 'n' in post:
+                                post = 'Virginia'
+                    elif post[0] == 'w':
+                        if 't' in post and 'g' in post and 'h' in post:
+                            post = 'Washington'
+                        elif 's' in post and 'c' in post and 'n' in post:
+                            post = 'Wisconsin'
+                        elif 'y' in post and 'm' in post and 'o' in post:
+                            post = 'Wyoming'
+                        elif ('e' in post and 's' in post and 't' in post) or 'w.' in post:
+                            post = 'West Virginia'
+                    else:
+                        post = ''
+                    if post:
+                        if pre:
+                            return pre + 'District of ' + post
+                        return 'District of ' + post
+            report_string = "NO_FIND_DISTRICT_{c}".format(c=court)
+            # print(report_string)
+            self.missed_parses.append(report_string)
+            return court
+        except:
+            return ''
 
     def clean_circuit(self, court):
         court = court.lower()
@@ -751,7 +1062,23 @@ class DocketTable:
         for row in court_dict:
             if city == row["city"]:
                 return row[key]
-        return None
+        report_string = "NO_FIND_MATCH_COUNRT_{v}".format(v=court)
+        if self.parsed.get("URL_path"):
+            abbrev = self.parsed.get("URL_path").rpartition("/")[0].rpartition("/")[2]
+            if abbrev == 'cacd':
+                return "Central District of California"
+            elif abbrev == 'caed':
+                return "Eastern District of California"
+            elif abbrev == 'cand':
+                return "Northern District of California"
+            elif abbrev == 'casd':
+                return "Southern District of California"
+            elif abbrev == 'az':
+                return "District of Arizona"
+            elif abbrev == "nm":
+                return "District of New Mexico"
+        self.missed_parses.append(report_string)
+        return court
 
 # judge_nid = Column(Integer, ForeignKey("federal_judges.id"), primary_key=True) # or n/a?
 # judge = relationship("Judge", back_populates="cases")
@@ -1017,17 +1344,112 @@ class DocketTable:
             return return_judges
         return ''
 
-    # def match_judge(self, entry_text):
-    #     return "TO BE COMPLETED"
+    def clean_cities(self, city):
+        for punct in ['/','-','.','_','|',':',',','division','Division',"'",'"','(',')','div','Div']:
+            city = city.replace(punct, ' ')
+        city = ' '.join([x.strip().title() for x in city.split()])
+        city = city.replace('Saint','St').replace('Mount','Mt').replace('Fort','Ft').replace('Junction','Jct').replace(' ','')
+        return city.lower()
+
+    def test_city_matches(self, city, state):
+        for citystate in self.cities.keys():
+            if str(city+state) in citystate:
+                return self.cities[citystate]["city"], self.cities[citystate]["state"]
+            elif str(city+state).lower() in citystate.lower():
+                return self.cities[citystate]["city"], self.cities[citystate]["state"]
+            clean_input = self.clean_cities(city)
+            clean_target = self.clean_cities(self.cities[citystate]["city"])
+            if str(clean_input+state) in str(clean_target+self.cities[citystate]["state"]):
+                return self.cities[citystate]["city"], self.cities[citystate]["state"]
+            elif clean_input in clean_target and (state == '??' or not state):
+                return self.cities[citystate]["city"], self.cities[citystate]["state"]
+            elif int(fuzz.ratio(clean_input,clean_target)) >= 85 and state == self.cities[citystate]["state"]:
+                return self.cities[citystate]["city"], self.cities[citystate]["state"]
+            elif int(fuzz.ratio(clean_input,clean_target)) >= 85 and (state == '??' or not state):
+                return self.cities[citystate]["city"], self.cities[citystate]["state"]
+            else:
+                continue
+        return None, None
 
     def match_cities(self, city, state):
         state = self.abbrev(state)
-        for punct in ['/','-','.','_','|',':',',']:
-            city = city.replace(punct, ' ')
-        city = ' '.join([x.strip().title() for x in city.split()])
+        if not city or city.strip() == '':
+            return None, None
+        c, s = self.test_city_matches(city, state)
+        if c:
+            return c, s
+        if len(city) < 4:
+            if city.lower() not in ['nyc','la','bos','chi','det','atl','dc','sf','sea',]:
+                report_string = "NO_FIND_MATCH_CITY_{v}, {s}".format(v=city,s=state)
+                self.missed_parses.append(report_string)
+                return None, None
+            else:
+                if 'nyc' in city.lower():
+                    new_c = "New York City"
+                elif 'la' in city.lower():
+                    new_c = "Los Angeles"
+                elif 'bos' in city.lower():
+                    new_c = "Boston"
+                elif 'chi' in city.lower():
+                    new_c = "Chicago"
+                elif 'det' in city.lower():
+                    new_c = "Detroit"
+                elif 'atl' in city.lower():
+                    new_c = "Atlanta"
+                elif 'dc' in city.lower():
+                    new_c = "Washington, DC"
+                elif 'sf' in city.lower():
+                    new_c = "San Francisco"
+                elif 'sea' in city.lower():
+                    new_c = "Seattle"
+                c, s = self.test_city_matches(new_c, state)
+                if c:
+                    return c, s
+                else:
+                    report_string = "NO_FIND_MATCH_CITY_{v}, {s}".format(v=city,s=state)
+                    self.missed_parses.append(report_string)
+                    return None, None
+        try_new_state = []
+        try_new_city = []
+        doc = self.nlp(city)
+        for ent in doc.ents:
+            if ent.label_ == 'GPE':
+                if ent.text in self.state_abbrevs.keys() or ent.text in self.state_abbrevs.values():
+                    check = self.abbrev(ent.text)
+                    if check != state:
+                        try_new_state.append(check)
+                else:
+                    try_new_city.append(ent.text)
+        if try_new_city:
+            for newc in try_new_city:
+                c, s = self.test_city_matches(newc, state)
+                if c:
+                    return c, s
+                else:
+                    if try_new_state:
+                        for news in try_new_state:
+                            c, s = self.test_city_matches(newc, news)
+                            if c:
+                                return c, s
+        elif try_new_state:
+            for news in try_new_state:
+                c, s = self.test_city_matches(city, news)
+                if c:
+                    return c, s
+        for char in city:
+            if char.isnumeric():
+                report_string = "NO_FIND_MATCH_CITY_{v}, {s}".format(v=city,s=state)
+                self.missed_parses.append(report_string)
+                return None, None
+        tokens = city.split()
+        if tokens:
+            if tokens[-1] in self.state_abbrevs.keys() or tokens[-1] in self.state_abbrevs.values():
+                city = ' '.join(tokens[:-1])
+        if city.isupper() or city.islower():
+            city = city.title()
+        city = self.clean_ends(city)
         combined = city+state
-        if combined not in self.cities.keys():
-            self.cities[combined] = {"city":city,"state":state}
+        self.cities[combined] = {"city":city,"state":state}
         return self.cities[combined]["city"],self.cities[combined]["state"]
 
     def parse_addl_docket_fields(self, obj_list):
@@ -1178,7 +1600,7 @@ class DocketTable:
                         self.add_col("Case","case_name",case_title)
                     else:
                         self.missed_parses.append("CASE_TITLE_DUPLICATES_"+case_title)
-                elif ' vs. ' in value.lower() or ' v. ' in value.lower() or ' v ' in value.lower() or ' v.' in value.lower() or ' vs.' in value.lower() or ' vs ' in value.lower():
+                elif ' vs. ' in value.lower() or ' v. ' in value.lower() or ' v ' in value.lower() or ' v.' in value.lower() or ' vs.' in value.lower() or ' vs ' in value.lower() or 'in the matter of' in value.lower() or '-v-' in value.lower() or ' vs, ' in value.lower():
                     if not case_title:
                         case_title = ' '.join([x.title() if x not in non_title_words else x for x in value.split()])
                         self.add_col("Case","case_name",case_title)
@@ -1214,6 +1636,7 @@ class DocketTable:
                 self.parse_later[source].append(obj)
         city, state = self.match_cities(city, state)
         self.add_col("Case","city_id",city)
+        self.add_col("Case","state_id",state)
         court_circuit = ''
         if 'circuit' in court_type.keys():
             court_circuit = self.match_court(court_type["circuit"], city, state, "circuit")
@@ -1712,9 +2135,24 @@ class DocketTable:
     def add_charge(self, charge):
         if not charge:
             return None
-        if charge.lower() not in self.charges.keys():
+        elif charge.lower().replace('.','') == 'usa' or charge.lower() == 'united states of america':
+            report_string = "NO_FIND_CHARGE_{v}".format(v=charge)
+            self.missed_parses.append(report_string)
+            return charge
+        for key in self.charges.keys():
+            if key == charge.lower():
+                return self.charges.get(key)
+            elif key == ' '.join(charge.lower().strip().split()).strip():
+                return self.charges.get(key)
+            elif key == charge[:-1].lower():
+                return self.charges.get(key)
+        report_string = "NO_FIND_CHARGE_{v}".format(v=charge)
+        # print(report_string)
+        if self.write:
             self.charges[charge.lower()] = charge
-        return self.charges[charge.lower()]
+        else:
+            self.missed_parses.append(report_string)
+        return charge
 
     def parse_charges(self, charge_array):
         charges = {}
@@ -1767,9 +2205,13 @@ class DocketTable:
         for designation in self.des.keys():
             if designation.lower() == value:
                 return self.des[designation]["label"]
+            if self.des[designation].get("alt_label"):
+                for alt in self.des[designation]["alt_label"]:
+                    if alt.lower() == value.lower().strip():
+                        return self.des[designation]["label"]
         if 'pro se' in value.lower():
             return self.des["PRO SE"]["label"]
-        self.des[value.title()] = {"label":value.title()}
+        #self.des[value.title()] = {"label":value.title()}
         report_string = "NO_FIND_DESIGNATION_{v}".format(v=value)
         # print(report_string)
         self.missed_parses.append(report_string)
@@ -1940,22 +2382,31 @@ class DocketTable:
 
     def match_role(self,field):
         for key in self.roles.keys():
+            if field.title().strip() == key:
+                return key
+        if self.roles[key].get("alt_label"):
+            for alt in self.roles[key]["alt_label"]:
+                if field.title().strip() == alt:
+                    return key
+        for key in self.roles.keys():
             if field.title().strip() in key:
                 return key
             elif key in field.title().strip():
                 return key
-            elif field.replace('ThirdParty','Third Party').title().strip() in key:
+            elif field.replace('-',' ').title().strip() in key:
                 return key
-            elif "alt_label" in self.roles[key].keys() and field.title().strip() in self.roles[key]["alt_label"]:
-                return key
-            elif "alt_label" in self.roles[key].keys() and field.replace('ThirdParty','Third Party').title().strip() in self.roles[key]["alt_label"]:
-                return key
-            elif "alt_label" in self.roles[key].keys() and self.roles[key]["alt_label"] in field.title().strip():
-                return key
-            elif field.lower().strip() in key.lower():
-                return key
-            elif "alt_label" in self.roles[key].keys() and field.lower().strip() in self.roles[key]["alt_label"]:
-                return key
+            if self.roles[key].get("alt_label"):
+                for alt in self.roles[key]["alt_label"]:
+                    if field.title().strip() in alt:
+                        return key
+                    elif field.replace('-',' ').title().strip() in alt:
+                        return key
+                    elif alt in field.title().strip():
+                        return key
+                    elif field.lower().strip() in key.lower():
+                        return key
+                    elif field.lower().strip() in alt:
+                        return key
         report_string = "NO_FIND_ROLE"+field
         # print(report_string)
         self.missed_parses.append(report_string)
@@ -2055,9 +2506,11 @@ class DocketTable:
         if not t:
             return ''
         t = t.strip()
-        if t[0] == ',' or t[0] == '.' or t[0] == '-' or t[0] == '(' or t[0] == ')' or t[0] == '"' or t[0] == ':' or t[0] == ';' or t[0] == '[' or t[0] == "'":
+        if t[0] in [',','.','-','(',')','"',':',';','[','<','>',"'",']','*','^','&','%','+',]:
             t = t[1:]
-        if t[-1] == ',' or t[-1] == '.' or t[-1] == '-' or t[-1] == '(' or t[-1] == ')' or t[-1] == '"' or t[-1] == ':' or t[-1] == ';' or t[-1] == ']' or t[-1] == "'":
+        if not t:
+            return ''
+        if t[-1] in [',','.','-','(',')','"',':',';','[','<','>',"'",']','*','^','&','%','+',]:
             t = t[:-1]
         t = t.strip()
         return t
@@ -2249,6 +2702,15 @@ class DocketTable:
         for field in self.parsed:
             value = self.parsed[field]
             if field == "docket_flags":
+                case_no = ''
+                if 'Case in other court:' in value:
+                    value, field, case_no = value.lower().partition('Case in other court:')
+                elif 'rel Case:' in value:
+                    value, field, case_no = value.lower().partition('rel Case:')
+                elif 'rel case' in value:
+                    value, field, case_no = value.lower().partition('rel case')
+                if case_no:
+                    self.add_other_case_no(field, case_no)
                 self.add_col("Case","docket_flags",value)
             elif field == "html":
                 self.add_col("DocketHTML","html",value)
@@ -2266,17 +2728,68 @@ class DocketTable:
             else:
                 self.missed_parses.append(value)
 
+    def get_html(self):
+        #filename = self.origin_url.replace('pipeline','html')
+        with open(self.tables["DocketHTML"]["html"], "rb") as f:
+            docket_html = f.read()
+        # just return raw html?
+        soup = BeautifulSoup(docket_html, 'html.parser')
+        self.tables["DocketHTML"]["html"] = str(soup)
+        self.tables["DocketHTML"]["parse"] = self.parsed
+
     def main(self):
         self.parse_json()
         self.report_misses()
+        self.get_html()
+        district_id = self.set_default_state()
+        if self.default_state not in self.tables["Case"].get("district_id",''):
+            if district_id:
+                self.add_col("Case","district_id",district_id)
+            else:
+            # if self.tables["Case"].get("district_id"):
+                #print(self.tables["Case"].get("district_id"))
+            #district_labels = ['']
+                try:
+                    district_labels = ['eastern','middle','western','northern','southern']
+                    district_id = ' '.join([district_labels[0].title(),"District of",self.default_state]).strip()
+                    district_indices = sorted([(self.tables["DocketHTML"]["html"].lower().find(label),label) for label in district_labels if self.tables["DocketHTML"]["html"].lower().find(label) > -1], key=lambda x: x[0])
+                    district_id = ' '.join([district_indices[0][1].title(),"District of",self.default_state])
+                    self.add_col("Case","district_id",district_id)
+                except:
+                    print("Could not find a district.")
+        remove = []
+        for miss in self.missed_parses:
+            if "NO_FIND_MATCH_COUNRT_" in miss:
+                remove.append(miss)
+            # elif "NO_FIND_MATCH_CITY_NO_FIND_MATCH_CITY_" in miss:
+            #     remove.append(miss)
+            elif "NO_FIND_CIRCUIT_" in miss:
+                remove.append(miss)
+        # if self.missed_parses:
+        #     for miss in self.missed_parses:
+        #         try:
+        #             value = miss.get("field_value_attempt")
+        #             field = miss.get("field_name_attempt")
+        #             if "Northern Mariana Islands (NMI)" in value:
+        #                 remove.append(miss)
+        #                 continue
+        #             # if "USM" not in value and "Custody" not in value:
+        #             #     continue
+        #             # if not self.tables["Case"].get("docket_flags",''):
+        #             #     self.add_col("Case","docket_flags",value)
+        #             # else:
+        #             #     self.tables["Case"]["docket_flags"] += ',' + value
+        #             # remove.append(miss)
+        #         except:
+        #             pass
+        for obj in remove:
+            try:
+                self.missed_parses.remove(obj)
+            except:
+                continue
 
-
-#path = "/Users/harper/Documents/nu_work/nsf/noacri/code/docket_parsing/parsed_dockets/83_dockets_20200226.json"
-# ga_s 1649_dockets_20200314.json
-# ga_n 17591_dockets_20200314.json
-# in_n 2299_dockets_20200314.json
-# in_s 4894_dockets_20200314.json
-ind_dir = "/Users/harper/Documents/nu_work/nsf/noacri/code/docket_parsing/parsed_dockets/test/17591_dockets_20200314.json"
-out_dir = "/Users/harper/Documents/nu_work/nsf/noacri/code/docket_parsing/parsed_dockets/test"
-# o_dir = "/Users/harper/Documents/nu_work/nsf/noacri/code/docket_parsing"
-DocketTables(ind_dir, out_dir, 300)
+if __name__ == "__main__":
+    if len(sys.argv) > 1:
+        DocketTables(sys.argv[1])
+    else:
+        DocketTables()

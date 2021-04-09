@@ -1,0 +1,177 @@
+{
+    "0": {
+        "category": "motion",
+        "label": "Motion for Extension",
+        "count": 0
+    },
+    "1": {
+        "category": "motion",
+        "label": "Motion for Default Judgment",
+        "count": 0
+    },
+    "2": {
+        "category": "motion",
+        "label": "Motion to Dismiss",
+        "count": 0
+    },
+    "3": {
+        "category": "motion",
+        "label": "Motion to Substitute",
+        "count": 0
+    },
+    "4": {
+        "category": "motion",
+        "label": "Motion to Withdraw",
+        "count": 0
+    },
+    "5": {
+        "category": "motion",
+        "label": "Motion for Voluntary Dismissal",
+        "count": 0
+    },
+    "6": {
+        "category": "motion",
+        "label": "Motion to Strike",
+        "count": 0
+    },
+    "7": {
+        "category": "motion",
+        "label": "Motion for a Protective Order",
+        "count": 0
+    },
+    "8": {
+        "category": "motion",
+        "label": "Motion for Leave",
+        "count": 0
+    },
+    "9": {
+        "category": "motion",
+        "label": "Motion to Amend",
+        "count": 0
+    },
+    "10": {
+        "category": "motion",
+        "label": "Motion to Quash",
+        "count": 0
+    },
+    "11": {
+        "category": "motion",
+        "label": "Motion to Compel",
+        "count": 0
+    },
+    "12": {
+        "category": "motion",
+        "label": "Motion for Summary Judgment",
+        "count": 0
+    },
+    "13": {
+        "category": "motion",
+        "label": "Motion in Limine",
+        "count": 0
+    },
+    "14": {
+        "category": "motion",
+        "label": "Motion to File Under Seal",
+        "count": 0
+    },
+    "15": {
+        "category": "motion",
+        "label": "Motion to Unseal",
+        "count": 0
+    },
+    "16": {
+        "category": "motion",
+        "label": "Motion to Transfer a Case",
+        "count": 0
+    },
+    "17": {
+        "category": "motion",
+        "label": "Motion for a Multidistrict Litigation (MDL) Transfer",
+        "count": 0
+    },
+    "18": {
+        "category": "motion",
+        "label": "Motion to Continue",
+        "count": 0
+    },
+    "19": {
+        "category": "motion",
+        "label": "Motion for Separate Trials",
+        "count": 0
+    },
+    "20": {
+        "category": "motion",
+        "label": "Motion to Suppress",
+        "count": 0
+    },
+    "21": {
+        "category": "motion",
+        "label": "Motion to Modify Conditions for Release",
+        "count": 0
+    },
+    "22": {
+        "category": "motion",
+        "label": "Motion to Review",
+        "count": 0
+    },
+    "23": {
+        "category": "motion",
+        "label": "Motion for Removal in Custody",
+        "count": 0
+    },
+    "24": {
+        "category": "motion",
+        "label": "Motion to Transfer a Prisoner",
+        "count": 0
+    },
+    "25": {
+        "category": "motion",
+        "label": "SKIP",
+        "count": 0
+    },
+    "26": {
+        "category": "motion",
+        "label": "Other Motion Not Listed Here",
+        "count": 0
+    },
+    "27": {
+        "category": "motion",
+        "label": "No Motion Here",
+        "count": 0
+    },
+    "28": {
+        "category": "motion",
+        "label": "Motion Requesting Early Termination of Probation",
+        "count": 0
+    },
+    "29": {
+        "category": "motion",
+        "label": "Motion for Order",
+        "count": 0
+    },
+    "30": {
+        "category": "motion",
+        "label": "Motion for Joinder",
+        "count": 0
+    },
+    "31": {
+        "category": "motion",
+        "label": "Motion to Exclude",
+        "count": 0
+    },
+    "32": {
+        "category": "motion",
+        "label": "Motion for Attorney Representation",
+        "count": 0
+    },
+    "33": {
+        "category": "motion",
+        "label": "Motion for Judgment (as a Matter of Law)",
+        "count": 0
+    },
+    "34": {
+        "category": "motion",
+        "label": "Motion to Proceed In Forma Pauperis",
+        "count": 0
+    }
+}

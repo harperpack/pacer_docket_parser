@@ -14,14 +14,19 @@
     "CJA Appointment": {
         "label": "CJA Appointment"
     },
+    "CJA Training Panel": {
+        "label": "CJA Training Panel"
+    },
     "Retained": {
         "label": "Retained"
     },
     "Assistant US Attorney": {
-        "label": "Assistant US Attorney"
+        "label": "Assistant US Attorney",
+        "alt_label": ["Assistant U.S. Attorney","Assistant U S Attorney","US Attorney/Assistant U.S.Attorney","AUSA Designation"]
     },
     "Government Attorney": {
-        "label": "Government Attorney"
+        "label": "Government Attorney",
+        "alt_label": ["Govt Attorney","Govt Atty","Government Attorney (local,state,federal)"]
     },
     "Pretrial Services": {
         "label": "Pretrial Services"
@@ -31,5 +36,74 @@
     },
     "Pro Bono": {
         "label": "Pro Bono"
+    },
+    "Public Defender Appointment": {
+        "label": "Public Defender Appointment"
+    },
+    "Bar Status: Admitted/In Good Standing": {
+        "label": "Bar Status: Admitted/In Good Standing"
+    },
+    "Bar Status: Admitted/In Good Standing*": {
+        "label": "Bar Status: Admitted/In Good Standing*"
+    },
+    "Bar Status: Not Admitted": {
+        "label": "Bar Status: Not Admitted"
+    },
+    "Bar Status: Other": {
+        "label": "Bar Status: Other"
+    },
+    "Bar Status: Unknown": {
+        "label": "Bar Status: Unknown"
+    },
+    "Bar Status: No Record": {
+        "label": "Bar Status: No Record"
+    },
+    "Federal Agency Attorney": {
+        "label": "Federal Agency Attorney"
+    },
+    "Temporary": {
+        "label": "Temporary"
+    },
+    "Admission Pro Hac Vice": {
+        "label": "Admission Pro Hac Vice"
+    },
+    "Federal Public Defender Appointment": {
+        "label": "Federal Public Defender Appointment",
+        "alt_label": ["Federal Public Defender","FPD"]
+    },
+    "US Attorney": {
+        "label": "US Attorney",
+        "alt_label": ["U.S. Attorney"]
+    },
+    "Government": {
+        "label": "Government"
+    },
+    "Public Defender": {
+        "label": "Public Defender"
+    },
+    "USA": {
+        "label": "USA"
+    },
+    "US Government Attorney": {
+        "label": "US Government Attorney",
+        "alt_label": ["U.S. Government Attorney","US Govt Atty"]
+    },
+    "USCA Appointment": {
+        "label": "USCA Appointment"
+    },
+    "Warning Order Attorney or Guardian Ad Litem": {
+        "label": "Warning Order Attorney or Guardian Ad Litem"
+    },
+    "Government - Federal": {
+        "label": "Government - Federal"
+    },
+    "Government - Other": {
+        "label": "Government - Other"
+    },
+    "Other": {
+        "label": "Other"
+    },
+    "State / Local Government": {
+        "label": "State / Local Government"
     }
 }

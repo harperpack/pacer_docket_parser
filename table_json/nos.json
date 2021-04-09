@@ -513,5 +513,10 @@
         "code": "950",
         "label": "Constitutionality of State Statutes",
         "category": "Other Statutes"
+    },
+    "999": {
+        "code": "999",
+        "label": "Miscellaneous Cases",
+        "category": "Other Statutes"
     }
 }

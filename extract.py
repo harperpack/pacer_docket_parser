@@ -15,18 +15,30 @@ from multiprocessing import Pool
 import json
 import sys
 import random
+# import traceback
 
 class CorpusParser:
 
-    def __init__(self, docket_dir, o_dir="./parsed_dockets/test/", threads=8):
+    def __init__(self, docket_dir, o_dir="./parsed_dockets/pipeline/", threads=8, qmax=1):
         self.docket_directory = docket_dir
         self.output_directory = o_dir
         self.process_count = threads
         self.docket_queue = []
+        self.queue_of_queues = []
+        self.queue_max = qmax
         self.parsed_dockets = {}
         self.docket_count = 0
         self.parse_count = 0
         self.main()
+
+    def track_completed(self):
+        self.completed_queue = {"complete":[],"quarantine":[]}
+        # try:
+        #     with open('/Users/harper/Documents/nu_work/nsf/noacri/code/docket_parsing/parsed_dockets/pipeline/20200316_parselist.json', 'r', encoding='utf-8') as f:
+        #         self.completed_queue = json.load(f)
+        # except:
+        #     print("Error loading the parselist.")
+        #     self.completed_queue = {"complete":[],"quarantine":[]}
 
     def build_docket_queue(self):
         if os.path.isfile(self.docket_directory):
@@ -36,57 +48,120 @@ class CorpusParser:
             for (dirpath, dirnames, filenames) in os.walk(self.docket_directory):
                 for filename in filenames:
                     if filename.endswith('.html'):
-                        self.docket_queue.append(os.path.join(dirpath, filename))
-                        self.docket_count += 1
+                        full_filename = str(os.path.join(dirpath, filename))
+                        if full_filename not in self.completed_queue["complete"]:
+                            self.docket_queue.append(os.path.join(dirpath, filename))
+                            self.docket_count += 1
+        if self.docket_count > self.queue_max:
+            target = 0
+            for i in range(self.docket_count):
+                if target + self.queue_max >= self.docket_count - 1:
+                    self.queue_of_queues.append(self.docket_queue[target:])
+                    break
+                else:
+                    self.queue_of_queues.append(self.docket_queue[target:target+self.queue_max])
+                    target += self.queue_max
+        else:
+            self.queue_of_queues.append(self.docket_queue)
 
-    def populate_roles(self):
-        with open("./table_json/roles.json", "r", encoding="utf-8") as f:
-            self.roles = json.load(f)
+    # def populate_roles(self):
+    #     with open("./table_json/roles.json", "r", encoding="utf-8") as f:
+    #         self.roles = json.load(f)
+
+    def progress(self, count, length):
+        # drawn from https://stackoverflow.com/questions/3173320/text-progress-bar-in-the-console/27871113
+        length -= 1
+        width = 60
+        if length > 0:
+            completion = float(count / length)
+        else:
+            completion = float(1)
+        filled = int(width * completion)
+        prog = round(100 * completion,1)
+        prog = str(prog) + "%" + ' ' * (5 - len(str(prog)))
+        progress_bar = '█' * filled + '-' * (width - filled)
+        big = width * ' '
+        sys.stdout.write('\r|{b}| {p} \t{f}\r'.format(b=progress_bar,p=prog, f=big))
+        sys.stdout.flush()
 
     def parse_docket(self, docket):
-        new_parse = DocketParser(docket,self.roles)
+        new_parse = DocketParser(docket)
         if "FAILURE" not in new_parse.parsed_docket:
             case_id = new_parse.case_id + "_0" + str(random.randint(1,99999))
             parsed_docket = {case_id: new_parse.parsed_docket}
-            return parsed_docket
+            filename = ''.join([self.output_directory,case_id,".json"])
+            with open(filename, "w") as f:
+                json.dump(parsed_docket, f, ensure_ascii=False, indent=4)
+            return '1'
 
-    def output_to_local_dir(self):
+    def output_to_local_dir(self, count, total):
         Path(self.output_directory).mkdir(parents=True, exist_ok=True)
         self.filename = self.output_directory + str(self.parse_count) + \
-                        "_dockets_" + str(date.today().strftime("%Y%m%d")) + ".json"
+                        "_dockets_" + str(date.today().strftime("%Y%m%d")) + \
+                        "_" + str(count) + "_of_" + str(total) + ".json"
         with open(self.filename, 'w', encoding='utf-8') as f:
             json.dump(self.parsed_dockets, f, ensure_ascii=False, indent=4)
+
+    def ensure_output_dirs(self):
+        if not os.path.exists(self.output_directory):
+            os.makedirs(self.output_directory)
 
     def main(self):
         try:
             start_queue = time.time()
+            self.track_completed()
             self.build_docket_queue()
+            self.ensure_output_dirs()
             if not self.docket_queue:
                 print("Could not find .html files to parse. :(")
             else:
-                self.populate_roles()
                 queue_time = round(time.time() - start_queue,2)
                 print("Successfully queued {c} dockets in {t} seconds.".format(c=self.docket_count,t=queue_time))
-                p = Pool(processes=self.process_count)
-                start_parse = time.time()
-                results_list = p.map(self.parse_docket, self.docket_queue)
-                self.parse_count = len(results_list)
-                for result_dict in results_list:
-                    self.parsed_dockets.update(result_dict)
-                parse_time = round(time.time() - start_parse,2)
-                print("Successfully parsed {c} dockets in {t} seconds.".format(c=self.parse_count,t=parse_time))
-                self.output_to_local_dir()
-                print("Saved to {p}".format(p=os.getcwd()+self.filename.replace("./","/")))
+                length = len(self.queue_of_queues)
+                for count, queue in enumerate(self.queue_of_queues, start=1):
+                    # if count == 2:
+                    #     self.completed_queue["quarantine"] += queue
+                    #     print("Quarantining second batch...")
+                    #     continue
+                        # if self.completed_queue["quarantine"] == [queue]:
+                        #     print("Quarantining first batch...")
+                        #     continue
+                        # else:
+                        #     print('Seemingly these are not the droids we have been looking for...')
+                    self.docket_queue = queue
+                    #print("Proceeding with batch {s} of {e}...".format(s=count,e=length))
+                    self.parsed_dockets = {}
+                    p = Pool(processes=self.process_count)
+                    start_parse = time.time()
+                    results_list = []
+                    # for d in self.docket_queue:
+                    #     results_list.append(self.parse_docket(d))
+                    results_list = p.map(self.parse_docket, self.docket_queue)
+                    p.close()
+                    p.join()
+                    self.parse_count = len(results_list)
+                    # for result_dict in results_list:
+                    #     self.parsed_dockets.update(result_dict)
+                    parse_time = round(time.time() - start_parse,2)
+                    #print("Parsed {c} dockets in {t} seconds, {q}doc/s.".format(c=self.parse_count,t=parse_time,q=round(self.parse_count/parse_time,2)))
+                    # self.output_to_local_dir(count, length)
+                    self.completed_queue["complete"] += queue
+                    self.progress(count, length)
+                    #print("Saved to {p}".format(p=os.getcwd()+self.filename.replace("./","/")))
+                print("\nCompleted in {s}s.\n".format(s=round(time.time() - start_queue,2)))
                 print("\nAnd when the parser saw the breadth of its outputs, it wept for there were no more files to parse.")
         except Exception as e:
             print('Now is the winter of our discontent: parsing failed with exception "{f}"'.format(f=e))
-
+        if self.completed_queue:
+            Path(self.output_directory).mkdir(parents=True, exist_ok=True)
+            self.filename = self.output_directory + str(date.today().strftime("%Y%m%d")) + "_parselist.json"
+            with open(self.filename, 'w', encoding='utf-8') as f:
+                json.dump(self.completed_queue, f, ensure_ascii=False, indent=4)
 
 class DocketParser:
 
-    def __init__(self, docket, role_parameters):
+    def __init__(self, docket):
         self.docket = docket
-        self.role_parameters = role_parameters
         self.parsed_docket = {"docket_flags":'',
                               "case_id":'',
                               "docket_case_id":'',
@@ -113,6 +188,109 @@ class DocketParser:
                               "cross defendant":{},
                               "thirdparty plaintiff":{},
                               "thirdparty defendant":{},
+                              "accountant": {},
+                              "amicus": {},
+                              "appraiser": {},
+                              "arbitrator": {},
+                              "assistant u.s. trustee": {},
+                              "attorney": {},
+                              "auctioneer": {},
+                              "auditor": {},
+                              "broker": {},
+                              "claimant": {},
+                              "consolidated claimant": {},
+                              "consolidated counter claimant": {},
+                              "consolidated counter defendant": {},
+                              "consolidated cross claimant": {},
+                              "consolidated cross defendant": {},
+                              "consolidated defendant": {},
+                              "consolidated plaintiff": {},
+                              "consolidated third party": {},
+                              "consolidated third party plaintiff": {},
+                              "consultant": {},
+                              "consumer privacy": {},
+                              "creditor committee": {},
+                              "creditor committee chair": {},
+                              "custodian": {},
+                              "debtor": {},
+                              "debtor in possession": {},
+                              "examiner": {},
+                              "financial advisor": {},
+                              "foreign representative": {},
+                              "garnishee": {},
+                              "health care ombudsman": {},
+                              "in re": {},
+                              "interim trustee": {},
+                              "interpleader": {},
+                              "intervenor": {},
+                              "intervenor defendant": {},
+                              "intervenor plaintiff": {},
+                              "joint debtor": {},
+                              "judge": {},
+                              "liquidator": {},
+                              "mediator": {},
+                              "movant": {},
+                              "non-filing spouse": {},
+                              "objector": {},
+                              "other professional": {},
+                              "partner": {},
+                              "petitioning creditor": {},
+                              "realtor": {},
+                              "receiver": {},
+                              "special counsel": {},
+                              "special master": {},
+                              "stockholder": {},
+                              "successor trustee": {},
+                              "surveyor": {},
+                              "taxpayer": {},
+                              "third party defendant": {},
+                              "third party plaintiff": {},
+                              "u.s. trustee": {},
+                              "witness ": {},
+                              "consolidated third party defendant": {},
+                              "fourth party defendant": {},
+                              "fourth party plaintiff": {},
+                              "interested non-party": {},
+                              "notice party": {},
+                              "unknown": {},
+                              "surety": {},
+                              "interpreter": {},
+                              "estate plaintiff": {},
+                              "estate defendant": {},
+                              "relief defendant": {},
+                              "executor defendant": {},
+                              "executor plaintiff": {},
+                              "estate of": {},
+                              "mediation assistance program counsel": {},
+                              "recruited counsel": {},
+                              "relator": {},
+                              "deponent": {},
+                              "deponent": {},
+                              "proposed": {},
+                              "court monitor": {},
+                              "consol defendant": {},
+                              "notice only party":{},
+                              "notice":{},
+                              "consol plaintiff":{},
+                              "consol counter defendant":{},
+                              "habeas attorney general service list":{},
+                              "mediator (adr panel)":{},
+                              "in re debtor":{},
+                              "real party in interest defendant": {},
+                              "witness": {},
+                              "counter-claimant": {},
+                              "counter-defendant": {},
+                              "intervenor dft": {},
+                              "miscellaneous": {},
+                              "cross-defendant": {},
+                              "cross-claimant": {},
+                              "3rd party plaintiff": {},
+                              "3rd party defendant": {},
+                              "neutral": {},
+                              "guardian ad litem party": {},
+                              "requesting party": {},
+                              "objecting party": {},
+                              "special mediation counsel": {},
                               "URL_path":str(self.docket),
                               "missed_parses":[],
                               }
@@ -123,6 +301,30 @@ class DocketParser:
                       'Material Witness', 'Interested Party', 'Counter Claimant',
                       'Miscellaneous Party','Counter Defendant','Cross Claimant',
                       'Cross Defendant','ThirdParty Plaintiff','ThirdParty Defendant',
+                      'Accountant', 'Amicus', 'Appraiser', 'Arbitrator', 'Assistant U.S. Trustee',
+                      'Attorney', 'Auctioneer', 'Auditor', 'Broker', 'Claimant',
+                      'Consolidated Claimant', 'Consolidated Counter Claimant',
+                      'Consolidated Counter Defendant', 'Consolidated Cross Claimant',
+                      'Consolidated Cross Defendant', 'Consolidated Defendant',
+                      'Consolidated Plaintiff', 'Consolidated Third Party', 'Consolidated Third Party Plaintiff',
+                      'Consultant', 'Consumer Privacy', 'Creditor Committee', 'Creditor Committee Chair',
+                      'Custodian', 'Debtor', 'Debtor In Possession', 'Examiner', 'Financial Advisor',
+                      'Foreign Representative', 'Garnishee', 'Health Care Ombudsman', 'In Re', 'Interim Trustee',
+                      'Interpleader', 'Intervenor', 'Intervenor Defendant', 'Intervenor Plaintiff',
+                      'Joint Debtor', 'Judge', 'Liquidator', 'Mediator', 'Movant', 'Non-Filing Spouse', 'Objector',
+                      'Other Professional', 'Partner', 'Petitioning Creditor', 'Realtor', 'Receiver',
+                      'Special Counsel', 'Special Master', 'Stockholder', 'Successor Trustee', 'Surveyor',
+                      'Taxpayer', 'Third Party Defendant', 'Third Party Plaintiff', 'U.S. Trustee', 'Witness ',
+                      'Consolidated Third Party Defendant', 'Fourth Party Defendant', 'Fourth Party Plaintiff',
+                      'Interested Non-Party', 'Notice Party', 'Unknown', 'Surety', 'Interpreter', 'Estate Plaintiff',
+                      'Estate Defendant', 'Relief Defendant', 'Executor Defendant', 'Executor Plaintiff', 'Estate of',
+                      'Mediation Assistance Program Counsel', 'Recruited Counsel', 'Relator', 'Deponent', 'Proposed',
+                      'surety','deponent','Court Monitor','Debtor in Possession','proposed','estate of','executor plaintiff',
+                      'executor defendant','Consol Defendant','Notice Only Party','Notice','Consol Plaintiff','unknown',
+                      'Consol Counter Defendant','HABEAS ATTORNEY GENERAL SERVICE LIST','Mediator (ADR Panel)','In re Debtor',
+                      'In Re Debtor',"Real Party In Interest Defendant",'Witness',"Counter-claimant","Counter-defendant",
+                      "Intervenor Dft","Miscellaneous","Cross-defendant","Cross-claimant","3rd party plaintiff","3rd party defendant",
+                      "Neutral","Guardian Ad Litem Party","Requesting Party","Objecting Party","Special Mediation Counsel"
                       ]
         self.other_known_underlines = ['Pending Counts','Disposition','Q','R',
                                        'Highest Offense Level (Opening)','U',
@@ -275,7 +477,7 @@ class DocketParser:
             full_row = {"date":'',"number":'',"ordinal_number":'',"links":{},"text":''}
             for column in row.find_all('td'):
                 if first:
-                    full_row["text"] = row.get_text()
+                    full_row["text"] = row.get_text().strip()
                     first = False
                     break
                 else:
@@ -284,7 +486,7 @@ class DocketParser:
                     elif len(column.get_text()) < 6:
                         full_row["number"] = column.get_text().strip()
                     else:
-                        full_row["text"] = column.get_text()
+                        full_row["text"] = column.get_text().strip()
 #            full_row["links"] = [str(a['href']) for a in row.find_all('a') if a.has_attr('href')]
             the_links = [[str(a['href']),a.get_text()] for a in row.find_all('a') if a.has_attr('href')]
             for link in the_links:
@@ -419,18 +621,18 @@ class DocketParser:
                         table = BeautifulSoup(next_underline + remainder, 'html.parser')
 
     def clean_underline(self, underline):
-        return ' '.join([line for line in underline.get_text().strip().split() if "(" not in line])
+        return ' '.join([line for line in underline.get_text().strip().split() if "(" not in line and ")" not in line])
 
     def update_role_list(self):
-        for underline in self.role_parameters.keys():
-            if underline in self.other_known_underlines:
-                continue
-            elif underline in self.roles:
-                continue
-            else:
-                # print('Hey! Listen! File {c} contains a role not yet seen: "{r}"'.format(c=self.case_id, r=underline,))
-                self.roles.append(underline)
-                self.parsed_docket[underline.lower()] = {}
+        # for underline in self.role_parameters.keys():
+        #     if underline in self.other_known_underlines:
+        #         continue
+        #     elif underline in self.roles:
+        #         continue
+        #     else:
+        #         # print('Hey! Listen! File {c} contains a role not yet seen: "{r}"'.format(c=self.case_id, r=underline,))
+        #         self.roles.append(underline)
+        #         self.parsed_docket[underline.lower()] = {}
         searchable_area = str(self.soup).partition("Docket Text")[0]
         searchable_soup = BeautifulSoup(searchable_area, 'html.parser')
         for underline in searchable_soup.find_all('u'):
@@ -635,7 +837,10 @@ class DocketParser:
                        "Acting","Advocate","Court","Commissioner","President",
                        "Liaison","Bondsman","Defender","Counsel","Sheriff"]
         if not non_reps:
-            lines = self.parsed_docket[role][key]["reps"][num].pop("blob")
+            try:
+                lines = self.parsed_docket[role][key]["reps"][num].pop("blob")
+            except(KeyError):
+                lines = []
             try:
                 italics = self.parsed_docket[role][key]["reps"][num].pop("fields")
             except(KeyError):
@@ -766,8 +971,14 @@ class DocketParser:
 
     def refine_role_blobs(self, role, key, name):
         addl_fields = []
-        lines = self.parsed_docket[role][key].pop("blob")
-        italics = self.parsed_docket[role][key].pop("italics")
+        try:
+            lines = self.parsed_docket[role][key].pop("blob")
+        except(KeyError):
+            lines = []
+        try:
+            italics = self.parsed_docket[role][key].pop("italics")
+        except(KeyError):
+            italics = []
         building_words = ['Tower','Center','Building','Courthouse','Complex',
                           'Prison','Jail','Penitentiary','Facility','USP',]
         title_words = ["Chief","Warden","Principal","Attorney","Deputy","Judge",
@@ -819,7 +1030,10 @@ class DocketParser:
                 self.parsed_docket[role][key]["other_fields"] += addl_fields
             else:
                 self.parsed_docket[role][key]["other_fields"] = addl_fields
-        self.parsed_docket[role][key]["reps"].pop("total_blob")
+        try:
+            self.parsed_docket[role][key]["reps"].pop("total_blob")
+        except(KeyError):
+            pass
         for num in self.parsed_docket[role][key]["reps"].keys():
             self.parse_contact_blob(role, key, num)
 
@@ -839,8 +1053,10 @@ class DocketParser:
             self.refine_blob_parsing()
             if self.parsed_docket["missed_parses"]:
                 print("Hey! Listen! We failed to parse {c} lines in file {f}".format(c=len(self.parsed_docket["missed_parses"]), f=self.case_id))
+            #self.parsed_docket = {k: v for k, v in self.parsed_docket.items() if v}
         except Exception as e:
             print('Hey! Listen! File {p} failed with exception "{f}"'.format(p=os.path.basename(self.docket), f=e))
+            # traceback.print_exc()
             self.parsed_docket["FAILURE"] = True
 
 

@@ -1,0 +1,14 @@
+{
+    "labels": [
+        "prison",
+        "probation",
+        "supervised_release",
+        "community_service",
+        "restitution",
+        "fine",
+        "assessment",
+        "dismissal",
+        "acquittal",
+        "rule_20_transfer"
+    ]
+}

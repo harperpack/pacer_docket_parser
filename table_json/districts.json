@@ -727,6 +727,30 @@
             "state": "GA",
             "city": "Savannah",
             "circuit_court": "Eleventh Circuit"
+        },
+        {
+            "district": "District of Guam",
+            "full_name": "United States District Court for the District of Guam",
+            "abbreviation": "D. Guam",
+            "state": "GU",
+            "city": "Hagatna",
+            "circuit_court": "Ninth Circuit"
+        },
+        {
+            "district": "District of the Northern Mariana Islands",
+            "full_name": "United States District Court for the Northern Mariana Islands",
+            "abbreviation": "D. N. Mar. I.",
+            "state": "MP",
+            "city": "Saipan",
+            "circuit_court": "Ninth Circuit"
+        },
+        {
+            "district": "District of the Virgin Islands",
+            "full_name": "United States District Court of the Virgin Islands",
+            "abbreviation": "D. N. Mar. I.",
+            "state": "VI",
+            "city": "Charlotte Amalie",
+            "circuit_court": "Third Circuit"
         }
     ]
 }
