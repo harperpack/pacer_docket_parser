@@ -15,7 +15,6 @@ from multiprocessing import Pool
 import json
 import sys
 import random
-# import traceback
 
 class CorpusParser:
 
@@ -33,12 +32,6 @@ class CorpusParser:
 
     def track_completed(self):
         self.completed_queue = {"complete":[],"quarantine":[]}
-        # try:
-        #     with open('/Users/harper/Documents/nu_work/nsf/noacri/code/docket_parsing/parsed_dockets/pipeline/20200316_parselist.json', 'r', encoding='utf-8') as f:
-        #         self.completed_queue = json.load(f)
-        # except:
-        #     print("Error loading the parselist.")
-        #     self.completed_queue = {"complete":[],"quarantine":[]}
 
     def build_docket_queue(self):
         if os.path.isfile(self.docket_directory):
@@ -63,10 +56,6 @@ class CorpusParser:
                     target += self.queue_max
         else:
             self.queue_of_queues.append(self.docket_queue)
-
-    # def populate_roles(self):
-    #     with open("./table_json/roles.json", "r", encoding="utf-8") as f:
-    #         self.roles = json.load(f)
 
     def progress(self, count, length):
         # drawn from https://stackoverflow.com/questions/3173320/text-progress-bar-in-the-console/27871113
@@ -119,35 +108,18 @@ class CorpusParser:
                 print("Successfully queued {c} dockets in {t} seconds.".format(c=self.docket_count,t=queue_time))
                 length = len(self.queue_of_queues)
                 for count, queue in enumerate(self.queue_of_queues, start=1):
-                    # if count == 2:
-                    #     self.completed_queue["quarantine"] += queue
-                    #     print("Quarantining second batch...")
-                    #     continue
-                        # if self.completed_queue["quarantine"] == [queue]:
-                        #     print("Quarantining first batch...")
-                        #     continue
-                        # else:
-                        #     print('Seemingly these are not the droids we have been looking for...')
                     self.docket_queue = queue
-                    #print("Proceeding with batch {s} of {e}...".format(s=count,e=length))
                     self.parsed_dockets = {}
                     p = Pool(processes=self.process_count)
                     start_parse = time.time()
                     results_list = []
-                    # for d in self.docket_queue:
-                    #     results_list.append(self.parse_docket(d))
                     results_list = p.map(self.parse_docket, self.docket_queue)
                     p.close()
                     p.join()
                     self.parse_count = len(results_list)
-                    # for result_dict in results_list:
-                    #     self.parsed_dockets.update(result_dict)
                     parse_time = round(time.time() - start_parse,2)
-                    #print("Parsed {c} dockets in {t} seconds, {q}doc/s.".format(c=self.parse_count,t=parse_time,q=round(self.parse_count/parse_time,2)))
-                    # self.output_to_local_dir(count, length)
                     self.completed_queue["complete"] += queue
                     self.progress(count, length)
-                    #print("Saved to {p}".format(p=os.getcwd()+self.filename.replace("./","/")))
                 print("\nCompleted in {s}s.\n".format(s=round(time.time() - start_queue,2)))
                 print("\nAnd when the parser saw the breadth of its outputs, it wept for there were no more files to parse.")
         except Exception as e:
@@ -473,7 +445,6 @@ class DocketParser:
         self.parsed_docket["docket_text"] = {"rows":[]}
         first = True
         for ordinal_number, row in enumerate(table.find_all('tr')):
-#            full_row = {"date":'',"number":'',"links":'',"text":''}
             full_row = {"date":'',"number":'',"ordinal_number":'',"links":{},"text":''}
             for column in row.find_all('td'):
                 if first:
@@ -487,7 +458,6 @@ class DocketParser:
                         full_row["number"] = column.get_text().strip()
                     else:
                         full_row["text"] = column.get_text().strip()
-#            full_row["links"] = [str(a['href']) for a in row.find_all('a') if a.has_attr('href')]
             the_links = [[str(a['href']),a.get_text()] for a in row.find_all('a') if a.has_attr('href')]
             for link in the_links:
                 full_row["links"][link[0]] = link[1]
@@ -506,7 +476,6 @@ class DocketParser:
             self.parse_header(table_text)
         else:
             self.parse_header(table_text)
-#            self.parsed_docket["missed_parses"].append(table.get_text())
 
     def parse_sub_role(self, blob, tags, role, key, subkey, sub2key=None, sub3key=None):
         if blob.get_text():
@@ -624,15 +593,6 @@ class DocketParser:
         return ' '.join([line for line in underline.get_text().strip().split() if "(" not in line and ")" not in line])
 
     def update_role_list(self):
-        # for underline in self.role_parameters.keys():
-        #     if underline in self.other_known_underlines:
-        #         continue
-        #     elif underline in self.roles:
-        #         continue
-        #     else:
-        #         # print('Hey! Listen! File {c} contains a role not yet seen: "{r}"'.format(c=self.case_id, r=underline,))
-        #         self.roles.append(underline)
-        #         self.parsed_docket[underline.lower()] = {}
         searchable_area = str(self.soup).partition("Docket Text")[0]
         searchable_soup = BeautifulSoup(searchable_area, 'html.parser')
         for underline in searchable_soup.find_all('u'):
@@ -645,7 +605,6 @@ class DocketParser:
                 print('Hey! Listen! File {c} contains a role not yet seen: "{r}"'.format(c=self.case_id, r=underline,))
                 self.roles.append(underline)
                 self.parsed_docket[underline.lower()] = {}
-
 
     def parse_docket(self):
         docket_tables = self.soup.find_all('table')
@@ -668,12 +627,10 @@ class DocketParser:
 
     def update_addl_field_list(self, line, name, value, loc="Header", key="addl_docket_fields", rolekey=None):
         if key == "addl_docket_fields":
-            check = {#"line":line,
-                                            "field_name_attempt":name,
-                                            "field_value_attempt":value,
-                                            "found_in_section":loc}
+            check = {"field_name_attempt":name,
+                     "field_value_attempt":value,
+                     "found_in_section":loc}
             if check not in self.parsed_docket[key]:
-                #print(check["field_name_attempt"])
                 self.parsed_docket[key].append({#"line":line,
                                             "field_name_attempt":name,
                                             "field_value_attempt":value,
@@ -1053,10 +1010,8 @@ class DocketParser:
             self.refine_blob_parsing()
             if self.parsed_docket["missed_parses"]:
                 print("Hey! Listen! We failed to parse {c} lines in file {f}".format(c=len(self.parsed_docket["missed_parses"]), f=self.case_id))
-            #self.parsed_docket = {k: v for k, v in self.parsed_docket.items() if v}
         except Exception as e:
             print('Hey! Listen! File {p} failed with exception "{f}"'.format(p=os.path.basename(self.docket), f=e))
-            # traceback.print_exc()
             self.parsed_docket["FAILURE"] = True
 
 

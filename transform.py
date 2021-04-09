@@ -56,16 +56,13 @@ import sys
 
 class DocketTables:
 
-    def __init__(self, in_dir='./parsed_dockets/pipeline', state=''):   #, out_dir="", batch_size=0):
+    def __init__(self, in_dir='./parsed_dockets/pipeline', state=''):
         self.in_dir = in_dir #if in_dir else "./parsed_dockets/test/"
-        # self.out_dir = out_dir if out_dir else "./db_ready_json/test_"
-        # self.out_dir = in_dir.replace('pipeline','noacri_dockets')
         self.docket_tables = {}
         self.failure_tables = {}
         self.shared_tables = {"misses":{"failures":[],}}
         self.case_ids = []
         self.miss_count = []
-        # self.batch_size = batch_size
         self.json_queue = []
         self.total = 0
         self.default_state = state
@@ -80,8 +77,6 @@ class DocketTables:
                     if filename.endswith('.json'):
                         full_filename = str(os.path.join(dirpath, filename))
                         if 'parselist' not in full_filename:
-                            # if "4-16-cv-01373-DDN" not in full_filename:# and "2-16-cv-04191-MDH" not in full_filename and "4-16-cv-00480-BP" not in full_filename and "4-16-cr-00427-HEA" not in full_filename:
-                            #     continue
                             self.json_queue.append(os.path.join(dirpath, filename))
 
     def load_json(self, json_file):
@@ -133,47 +128,6 @@ class DocketTables:
             with open(filename_charge, "w", encoding="utf-8") as f:
                 json.dump(self.shared_tables["charges"], f, ensure_ascii=False, indent=4)
 
-    # def output_json(self):
-    #     # filename = self.out_dir + "/" + self.case_ids[0] + ".json"
-    #     filename = self.out_dir
-    #     # print(filename)
-    #     # print(self.docket_tables)
-    #     try:
-    #         if not self.batch_size:
-    #             with open(filename, "w", encoding="utf-8") as f:
-    #                 json.dump(self.docket_tables, f, ensure_ascii=False, indent=4)
-    #             if self.shared_tables["misses"]:
-    #                 filename_miss = filename.replace(".json","__MISS.json")
-    #                 with open(filename_miss, "w", encoding="utf-8") as f:
-    #                     json.dump(self.shared_tables["misses"], f, ensure_ascii=False, indent=4)
-    #         else:
-    #             label = self.batch_local_path+str(os.path.sep)+"PARSE_"+str(self.length)+"_of_"+str(self.length)+".json"
-    #             with open(label, "w", encoding="utf-8") as f:
-    #                 json.dump(self.docket_tables, f, ensure_ascii=False, indent=4)
-    #             if self.shared_tables["misses"]:
-    #                 filename_miss = self.batch_local_path+str(os.path.sep)+"final__MISS.json"
-    #                 with open(filename_miss, "w", encoding="utf-8") as f:
-    #                     json.dump(self.shared_tables["misses"], f, ensure_ascii=False, indent=4)
-    #         if self.shared_tables["cities"]:
-    #             filename_city = "./table_json/cities.json"
-    #             with open(filename_city, "w", encoding="utf-8") as f:
-    #                 json.dump(self.shared_tables["cities"], f, ensure_ascii=False, indent=4)
-    #         if self.shared_tables["charges"]:
-    #             filename_charge = "./table_json/charges.json"
-    #             with open(filename_charge, "w", encoding="utf-8") as f:
-    #                 json.dump(self.shared_tables["charges"], f, ensure_ascii=False, indent=4)
-    #     except:
-    #         print("FAILURE TO OUTPUT JSON")
-
-    # def batch_save(self, shard):
-    #     try:
-    #         label = self.batch_local_path+str(os.path.sep)+"PARSE_"+str(shard)+"_of_"+str(self.length)+".json"
-    #         with open(label, "w", encoding="utf-8") as f:
-    #             json.dump(self.docket_tables, f, ensure_ascii=False, indent=4)
-    #         self.docket_tables = {}
-    #     except:
-    #         print("FAILURE TO OUTPUT JSON")
-
     def populate_nos(self):
         with open("./table_json/nos.json", "r", encoding="utf-8") as f:
             self.shared_tables["nos"] = json.load(f)
@@ -199,10 +153,6 @@ class DocketTables:
     def populate_charges(self):
         with open("./table_json/charges.json", "r", encoding="utf-8") as f:
             self.shared_tables["charges"] = json.load(f)
-        # file_path = self.out_dir + "/" + "charges.json"
-        # if os.path.isfile(file_path):
-        #     with open(file_path, "r", encoding="utf-8") as f:
-        #         self.shared_tables["charges"] = json.load(f)
 
     def populate_cities(self):
         with open("./table_json/cities.json", "r", encoding="utf-8") as f:
@@ -221,7 +171,6 @@ class DocketTables:
                 self.shared_tables["cities"][combined] = {"city":court["city"],"state":court["state"]}
 
     def load(self):
-        # self.prep_batching()
         self.populate_roles()
         self.populate_nos()
         self.populate_circuit()
@@ -229,19 +178,6 @@ class DocketTables:
         self.populate_designations()
         self.populate_charges()
         self.populate_cities()
-        # self.build_cities()
-
-    # def prep_batching(self):
-    #     in_filename = self.in_dir[self.in_dir.rfind(str(os.path.sep)):]
-    #     in_dir_base = self.in_dir.replace(in_filename,'')
-    #     self.batch_home_path = in_dir_base + str(os.path.sep) + 'batch'
-    #     # self.batch_home_path = str(os.getcwd()) + str(os.path.sep) + 'batch'
-    #     # self.batch_home_path = './batch/'
-    #     Path(self.batch_home_path).mkdir(parents=True, exist_ok=True)
-    #     self.batch_local_path = self.batch_home_path + str(os.path.sep) + in_filename[1:].replace('.json','')
-    #     Path(self.batch_local_path).mkdir(parents=True, exist_ok=True)
-        # if not os.path.exists(self.batch_local_path):
-        #     os.makedirs(self.batch_local_path)
 
     def ensure_output_dirs(self):
         failure_dir = self.in_dir.replace('pipeline','failures')
@@ -282,7 +218,6 @@ class DocketTables:
                         if add_misses:
                             self.shared_tables["misses"][case] = docket.missed_parses
                             local_misses.append(docket.miss_count)
-                            #self.failure_tables[str(case_count)] = docket.tables
                             save_table["d"] = docket.tables
                             save_table["moises"] = docket.missed_parses
                             save_type = "failure"
@@ -296,9 +231,7 @@ class DocketTables:
                         mn = round(statistics.mean(local_misses),2)
                         md = round(statistics.median(local_misses),2)
                         self.miss_count += local_misses
-                    # self.save_latest(json_file)
                     latest_time = round(time.time() - start_parse,2)
-                    #print("Finished {f} of {c} files:\n-->\t{q} misses\t{t}dckt/s\t{m}miss/dckt\tmedian: {d}\tmean: {n}\n".format(q=len(local_misses),f=json_count,c=len(self.json_queue),t=round(case_count/latest_time,2),m=round(sum(local_misses)/case_count,2),d=md,n=mn))
                 except Exception as e:
                     print('...parsing of {j} failed with exception "{f}"\n'.format(j=json_file[json_file.rfind('/')+1:],f=e))
                     traceback.print_exc()
@@ -326,55 +259,6 @@ class DocketTables:
         except Exception as e:
             print('...\n...printing, too, fails: "{f}"'.format(f=e))
 
-    # def old_main(self):
-    #     start = time.time()
-    #     self.load_json()
-    #     self.load()
-    #     nlp = spacy.load("en_core_web_sm")
-    #     self.length = len(self.parsed.keys())
-    #     load_time = round(time.time() - start,2)
-    #     print("Successfully loaded {c} dockets in {t} seconds.".format(c=self.length,t=load_time))
-    #     start_parse = time.time()
-    #     for count, case in enumerate(self.parsed,start=1):
-    #         self.case_ids.append(case)
-    #         docket = DocketTable(case,self.parsed[case],self.shared_tables,nlp,self.in_dir)
-    #         self.shared_tables["cities"] = docket.cities
-    #         self.shared_tables["des"] = docket.des
-    #         self.shared_tables["charges"] = docket.charges
-    #         self.docket_tables[str(count)] = docket.tables
-    #         add_misses = False
-    #         if docket.missed_parses:
-    #             for miss in docket.missed_parses:
-    #                 if miss:
-    #                     add_misses = True
-    #                     break
-    #         if add_misses:
-    #             self.shared_tables["misses"][case] = docket.missed_parses
-    #             self.miss_count.append(docket.miss_count)
-    #         if count == self.length:
-    #             mn = 0
-    #             md = 0
-    #             if self.miss_count:
-    #                 mn = round(statistics.mean(self.miss_count),2)
-    #                 md = round(statistics.median(self.miss_count),2)
-    #             done_time = round(time.time() - start_parse,2)
-    #             print("\n----------")
-    #             print("Completed parsing.")
-    #             print("{c} docket JSONs in {t} seconds.".format(c=count,t=done_time))
-    #             print("Final statistics:\t{t}s/docket\t{m}misses/docket\tmedian: {d}\tmean: {n}".format(t=round(done_time/count,2),m=round(sum(self.miss_count)/count,2),d=md,n=mn))
-    #         elif count % 300 == 0:
-    #             print("...{c} docket JSONs parsed.".format(c=count))
-    #             latest_time = round(time.time() - start_parse,2)
-    #             mn = 0
-    #             md = 0
-    #             if self.miss_count:
-    #                 mn = round(statistics.mean(self.miss_count),2)
-    #                 md = round(statistics.median(self.miss_count),2)
-    #             print("--->\t{t}s/docket\t{m}misses/docket\tmedian: {d}\tmean: {n}".format(t=round(latest_time/count,2),m=round(sum(self.miss_count)/count,2),d=md,n=mn))
-    #             if self.batch_size:
-    #                 # print("Batch")
-    #                 self.batch_save(count)
-    #     self.output_json()
 
 class DocketTable:
 
@@ -507,7 +391,6 @@ class DocketTable:
         if dist_most:
             if 'New York' not in dist_most[1][0]:
                 print(self.case_id)
-            # print(dist_most)
             self.default_state = dist_most[1][0]
             return dist_most[1][1]
         counts = {}
@@ -575,16 +458,6 @@ class DocketTable:
                 elif "NO_FIND_MATCH_CITY" in obj:
                     if self.tried_city:
                         continue
-                    # elif ":" in obj:
-                    #     location = obj.rfind(":")
-                    #     if location >= 0:
-                    #         other_case = obj.rpartition(',')[0][location-1:]
-                    #         if 'magistrate' in obj.lower():
-                    #             self.add_other_case_no("magistrate",other_case)
-                    #         else:
-                    #             self.add_other_case_no("",other_case)
-                    #         to_be_removed.append(obj)
-                    #         continue
                     elif obj[-2:].isupper():
                         city, comma, state = obj.rpartition('(')[2].partition(',')
                         city, state = self.match_cities(city, state)
@@ -679,10 +552,6 @@ class DocketTable:
                     break
             if report and self.missed_parses:
                 self.miss_count = len(self.missed_parses)
-                # print("{c} has {n} missed parses!".format(c=self.new_case_id,n=len(self.missed_parses)))
-                # filename = "./missed_"+self.new_case_id+".json"
-                # with open(filename, "w", encoding="utf-8") as f:
-                #     json.dump(self.missed_parses, f, ensure_ascii=False, indent=4)
 
     def add_col(self, table, label, value):
         self.tables[table][label] = value
@@ -714,7 +583,7 @@ class DocketTable:
                 return date
             return date.isoformat()
         except:
-            print("How?")
+            print("We experienced an error with make_date(), but how?")
 
     def add_other_case_no(self, field, value):
         key_value = value.lower().strip()
@@ -754,7 +623,6 @@ class DocketTable:
                     if token.lower() == self.nos[key]["label"].lower():
                         return self.nos[key]
         report_string = "NO_FIND_NOS_"+value
-        # print(report_string)
         self.missed_parses.append(report_string)
         return value.title()
 
@@ -961,7 +829,6 @@ class DocketTable:
                             return pre + 'District of ' + post
                         return 'District of ' + post
             report_string = "NO_FIND_DISTRICT_{c}".format(c=court)
-            # print(report_string)
             self.missed_parses.append(report_string)
             return court
         except:
@@ -1032,7 +899,6 @@ class DocketTable:
             elif '1' in token:
                 return 'First Circuit'
         report_string = "NO_FIND_CIRCUIT_{c}".format(c=court)
-        # print(report_string)
         self.missed_parses.append(report_string)
         return court
 
@@ -1047,12 +913,8 @@ class DocketTable:
             return None
         for row in court_dict:
             if court == row[key]:
-                # if city != row["city"]:
-                #     court_dict[row]["other_cities"] = city + ", " + state
                 return row[key]
             elif self.a_z_clean(court) == self.a_z_clean(row[key]):
-                # if city != row["city"]:
-                #     court_dict[row]["other_cities"] = city + ", " + state
                 return row[key]
         if state != "??":
             for row in court_dict:
@@ -1079,16 +941,6 @@ class DocketTable:
                 return "District of New Mexico"
         self.missed_parses.append(report_string)
         return court
-
-# judge_nid = Column(Integer, ForeignKey("federal_judges.id"), primary_key=True) # or n/a?
-# judge = relationship("Judge", back_populates="cases")
-# case_id = Column(String, ForeignKey("cases.case_id"), primary_key=True) # or n/a?
-# case = relationship("Case", back_populates="judges")
-# date_start = Column(Date) # todo: figure out how we know this - docket entries?
-# date_end = Column(Date) # todo: figure out how we know this - docket entries?
-# name = Column(String) # e.g., "Judge Marvin H. Shoob", "Magistrate Judge Gerrilyn G. Brill"
-# status = Column(String) # e.g., assigned_to, referred_to
-# magistrate = Column(Boolean)
 
     def add_judge(self, field, value, source):
         j = {"name":'',
@@ -2147,7 +1999,6 @@ class DocketTable:
             elif key == charge[:-1].lower():
                 return self.charges.get(key)
         report_string = "NO_FIND_CHARGE_{v}".format(v=charge)
-        # print(report_string)
         if self.write:
             self.charges[charge.lower()] = charge
         else:
@@ -2179,7 +2030,6 @@ class DocketTable:
                         continue
                     if "(" in tokens[-1]:
                         counts = tokens[-1][tokens[-1].rfind('(')+1:].replace(')','').strip()
-                        # counts = tokens[-1].partition("(")[2].replace(")","").strip()
                         if not counts.isalpha():
                             charges[field][key]["counts"] = counts
                             line = line[:line.rfind("("+counts)]
@@ -2211,9 +2061,7 @@ class DocketTable:
                         return self.des[designation]["label"]
         if 'pro se' in value.lower():
             return self.des["PRO SE"]["label"]
-        #self.des[value.title()] = {"label":value.title()}
         report_string = "NO_FIND_DESIGNATION_{v}".format(v=value)
-        # print(report_string)
         self.missed_parses.append(report_string)
         return value.title()
 
@@ -2408,7 +2256,6 @@ class DocketTable:
                     elif field.lower().strip() in alt:
                         return key
         report_string = "NO_FIND_ROLE"+field
-        # print(report_string)
         self.missed_parses.append(report_string)
         return field.title()
 
@@ -2554,7 +2401,7 @@ class DocketTable:
                 elif name in n:
                     continue
                 else:
-                    print("NAME CONCAT")
+                    print("NAME CONCAT: {n} and {j}".format(n=n,j=name))
                     n += ' ' + name
         t = ''
         if titles:
@@ -2590,25 +2437,6 @@ class DocketTable:
                         t = ''
                         break
         return n, t, c
-        # title, capacity = self.parse_role_title(name_attempt,name_attempt)
-        # if title and title in name_attempt:
-        #     name_attempt = name_attempt.replace(title, ' ').strip()
-        # if not party[idx]["name"]:
-        #     party[idx]["name"] = name_attempt
-        # else:
-        #     party[idx]["name"] = name_attempt + ' ' + party[idx]["name"]
-        # if title:
-        #     if 'title' not in party[idx].keys():
-        #         party[idx]["title"] = title
-        #     else:
-        #         if len(title.split()) < len(party[idx]["title"].split()):
-        #             party[idx]["title"] = title
-        # if capacity:
-        #     if 'capacity' not in party[idx].keys():
-        #         party[idx]["capacity"] = capacity
-        #     else:
-        #         if len(capacity.split()) > len(party[idx]["capacity"].split()):
-        #             party[idx]["capacity"] = capacity
 
     def parse_party(self, label, parsed):
         for index in parsed:
@@ -2729,10 +2557,8 @@ class DocketTable:
                 self.missed_parses.append(value)
 
     def get_html(self):
-        #filename = self.origin_url.replace('pipeline','html')
         with open(self.tables["DocketHTML"]["html"], "rb") as f:
             docket_html = f.read()
-        # just return raw html?
         soup = BeautifulSoup(docket_html, 'html.parser')
         self.tables["DocketHTML"]["html"] = str(soup)
         self.tables["DocketHTML"]["parse"] = self.parsed
@@ -2746,9 +2572,6 @@ class DocketTable:
             if district_id:
                 self.add_col("Case","district_id",district_id)
             else:
-            # if self.tables["Case"].get("district_id"):
-                #print(self.tables["Case"].get("district_id"))
-            #district_labels = ['']
                 try:
                     district_labels = ['eastern','middle','western','northern','southern']
                     district_id = ' '.join([district_labels[0].title(),"District of",self.default_state]).strip()
@@ -2761,27 +2584,8 @@ class DocketTable:
         for miss in self.missed_parses:
             if "NO_FIND_MATCH_COUNRT_" in miss:
                 remove.append(miss)
-            # elif "NO_FIND_MATCH_CITY_NO_FIND_MATCH_CITY_" in miss:
-            #     remove.append(miss)
             elif "NO_FIND_CIRCUIT_" in miss:
                 remove.append(miss)
-        # if self.missed_parses:
-        #     for miss in self.missed_parses:
-        #         try:
-        #             value = miss.get("field_value_attempt")
-        #             field = miss.get("field_name_attempt")
-        #             if "Northern Mariana Islands (NMI)" in value:
-        #                 remove.append(miss)
-        #                 continue
-        #             # if "USM" not in value and "Custody" not in value:
-        #             #     continue
-        #             # if not self.tables["Case"].get("docket_flags",''):
-        #             #     self.add_col("Case","docket_flags",value)
-        #             # else:
-        #             #     self.tables["Case"]["docket_flags"] += ',' + value
-        #             # remove.append(miss)
-        #         except:
-        #             pass
         for obj in remove:
             try:
                 self.missed_parses.remove(obj)
